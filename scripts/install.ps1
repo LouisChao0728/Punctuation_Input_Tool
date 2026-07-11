@@ -5,9 +5,10 @@
 #   -NoLaunch ：安裝完成後不立即啟動
 # 動作：
 #   1. dist\PunctInput.exe 不存在時先執行 build.ps1 建置
-#   2. 停止執行中的 PunctInput，複製 exe 至 %LOCALAPPDATA%\Programs\PunctInput\
-#   3. 建立開始功能表捷徑與開機自啟捷徑（Startup 資料夾）
-#   4. 啟動已安裝之 PunctInput
+#   2. 偵測既有安裝（安裝目錄或捷徑任一存在），有則先執行 uninstall.ps1 解除安裝
+#   3. 停止執行中的 PunctInput，複製 exe 至 %LOCALAPPDATA%\Programs\PunctInput\
+#   4. 建立開始功能表捷徑與開機自啟捷徑（Startup 資料夾）
+#   5. 啟動已安裝之 PunctInput
 # 解除安裝：powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1
 # =====================================================================
 param(
@@ -32,7 +33,14 @@ if (-not (Test-Path $srcExe)) {
     }
 }
 
-# 2. 停止執行中實例（含舊安裝位置），複製 exe
+# 2. 偵測既有安裝，先解除安裝（老闆 2026-07-11 指示：安裝前先清舊版）
+$hasOld = (Test-Path $installDir) -or (Test-Path $startMenuLnk) -or (Test-Path $startupLnk)
+if ($hasOld) {
+    Write-Output "偵測到既有安裝，先執行解除安裝..."
+    & (Join-Path $PSScriptRoot "uninstall.ps1")
+}
+
+# 3. 停止執行中實例（解除安裝已停止者此處為空跑保險），複製 exe
 $running = Get-Process PunctInput -ErrorAction SilentlyContinue
 if ($running) {
     Write-Output ("停止執行中的 PunctInput（PID {0}）" -f $running.Id)
@@ -44,7 +52,7 @@ Copy-Item -Path $srcExe -Destination $installExe -Force
 $copied = Get-Item $installExe
 Write-Output ("已部署：{0}（{1:N0} bytes）" -f $copied.FullName, $copied.Length)
 
-# 3. 建立捷徑（WScript.Shell 為 Windows 內建 COM，零外部依賴）
+# 4. 建立捷徑（WScript.Shell 為 Windows 內建 COM，零外部依賴）
 $shell = New-Object -ComObject WScript.Shell
 $lnk = $shell.CreateShortcut($startMenuLnk)
 $lnk.TargetPath = $installExe
@@ -69,7 +77,7 @@ if ($NoStartup) {
     Write-Output ("開機自啟捷徑：{0}" -f $startupLnk)
 }
 
-# 4. 啟動
+# 5. 啟動
 if ($NoLaunch) {
     Write-Output "安裝完成（未啟動，-NoLaunch）"
 } else {

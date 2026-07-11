@@ -4,6 +4,22 @@
 
 ---
 
+## 安裝流程改版註記（2026-07-11，自 master `2d422c2` cherry-pick）——程式本體無異動
+
+### 觸發
+
+1. 老闆 Boss_Prompt（[look rs]）指示：Release 安裝時先判斷是否已有安裝舊版檔案，有則先解除安裝；master 與 Branch 都要。
+
+### 變更
+
+1. `scripts\install.ps1`：部署前新增偵測步驟——安裝目錄或任一捷徑存在即先呼叫 `uninstall.ps1` 完整解除舊版，再進行部署；本分支之來源檔名 `dist\PunctInput_Aphy.exe` 於合併時保留。
+
+### 驗證
+
+1. 腳本邏輯與 master 完全相同；master 端已實測 PASS（偵測既有安裝 → 三項舊件全移除 → 重新部署 → 啟動）。本分支安裝與 master 共用目的地與 Mutex，於老闆本機重複實測會取代預設之 master 安裝，故不重測。
+
+---
+
 ## v1.4（2026-07-11，Aphy 分支）——符號集擴充
 
 > 本區塊僅存在於 `Aphy` 分支；master 維持 v1.3。

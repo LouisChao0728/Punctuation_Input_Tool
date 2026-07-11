@@ -48,7 +48,7 @@
 | `src\Program.cs` | C# WinForms 單檔全部邏輯：視窗建置、DPI 縮放、全域熱鍵、符號送出三路路由（DD-4／DD-9，含剪貼簿快照與還原）、系統匣、除錯日誌（FR-013） | 751 行（2026-07-11 v1.4 實查）；語言層級 C# 5（NFR-05） |
 | `src\app.manifest` | DPI 感知宣告（`dpiAware=true`，NFR-03）+ Common Controls v6 相依宣告 | assembly version 1.0.0.0 |
 | `scripts\build.ps1` | 建置腳本：呼叫 `csc.exe` 編譯 `Program.cs`，產出 `dist\PunctInput.exe` | UTF-8 BOM；乾淨檢出時自動建立 `dist\`（NFR-02） |
-| `scripts\install.ps1` | 安裝腳本（FR-014）：部署 exe 至 `%LOCALAPPDATA%\Programs\PunctInput\`、建立開始功能表與開機自啟捷徑、啟動 | UTF-8 BOM；`-NoStartup` 略過自啟、`-NoLaunch` 不啟動；dist 缺檔時自動先建置 |
+| `scripts\install.ps1` | 安裝腳本（FR-014）：偵測既有安裝先解除舊版，再部署 exe 至 `%LOCALAPPDATA%\Programs\PunctInput\`、建立開始功能表與開機自啟捷徑、啟動 | UTF-8 BOM；`-NoStartup` 略過自啟、`-NoLaunch` 不啟動；dist 缺檔時自動先建置 |
 | `scripts\uninstall.ps1` | 解除安裝腳本（FR-014）：停止程序、移除捷徑與安裝目錄 | UTF-8 BOM；不動原始碼與 `dist\` |
 | `dist\PunctInput_Aphy.exe` | Aphy 分支建置產出（可執行檔）；master 分支產出 `dist\PunctInput.exe`，dist 雙檔並存 | 17,920 bytes（2026-07-11 v1.4 實查值） |
 | `DOC\` | 本專案文件目錄 | 詳見第四節 |
