@@ -21,6 +21,10 @@
 2. 缺陷修正：`timeout` 指令於 PATH 被覆蓋或 stdin 重導環境失效，改 `%SystemRoot%\System32\ping.exe -n 3` 絕對路徑延遲法（實測 2.02 秒）。
 3. 移入 `scripts\` 後 STEP-4 四序位定位自 `scripts\` 實測：正確命中 `..\dist\PunctInput_Aphy.exe`（17,920 bytes，PASS）。
 
+### 發布（2026-07-12 老闆裁決）
+
+1. 老闆指示 Release 標籤前移至含取證 bat 之 HEAD：`v1.3` 與 `v1.4.2-Aphy` 標籤 force 前移至各自分支最新 HEAD（程式本體、版號與 release assets 均不變，Source zip 隨標籤更新後含 `scripts\Diagnose_Illustrator.bat`），供 Aphy 使用者自 Release Source 直接取得取證工具。比照 2026-07-11 安裝入口 batch 之標籤前移前例（登記 commit 入標籤範圍）。
+
 ---
 
 ## 安裝入口易用性註記（2026-07-11）——程式本體無異動，版號維持 v1.3
