@@ -79,27 +79,22 @@ namespace PunctInput
         private const ushort VK_RWIN = 0x5C;
         private const ushort VK_V = 0x56;
 
-        // ---- 符號清單（Boss_Prompt 指定順序；v1.2 起括號成組一鍵成對輸入）----
-        // 基礎 7 鍵：「」 『』 《》 【】 ： ● █
-        // Aphy 分支擴充（2026-07-11 Boss_Prompt「new item」區塊，依列出順序附加）：
-        //   成對 2 鍵：〔〕（U+3014 U+3015）、﹝﹞（U+FE5D U+FE5E）
-        //   單一 36 鍵：箭頭與愛心、勾選、圈號 ⓪ 至 ⑩、點號 ⒈ 至 ⒑、花卉
-        //   （清單第 5 項之 Facebook 表情圖檔實體為 ♥ U+2665）
-        private static readonly string[] Symbols = new string[]
+        // ---- 符號清單（列結構定義；v1.2 起括號成組一鍵成對輸入）----
+        // Aphy 版 v1.4.2 老闆裁決：1 列 11 項；✿ ❀ 移至 ⛤ 之後；
+        // 圈號 ⓪ 至 ⑩ 與點號 ⒈ 至 ⒑ 各自獨立成列。
+        // 版面 5 列（11／11／2／11／10 鍵），空缺欄位不建按鈕。
+        // （「new item」清單第 5 項之 Facebook 表情圖檔實體為 ♥ U+2665）
+        private static readonly string[][] SymbolRows = new string[][]
         {
-            "「」", "『』", "《》", "【】",
-            "：", "●", "█",
-            "〔〕", "﹝﹞",
-            "←", "→", "➤", "❥", "♥", "♡", "►", "◄",
-            "⇒", "✔", "✓", "☑", "⛤",
-            "⓪", "①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩",
-            "⒈", "⒉", "⒊", "⒋", "⒌", "⒍", "⒎", "⒏", "⒐", "⒑",
-            "✿", "❀"
+            new string[] { "「」", "『』", "《》", "【】", "：", "●", "█", "〔〕", "﹝﹞", "←", "→" },
+            new string[] { "➤", "❥", "♥", "♡", "►", "◄", "⇒", "✔", "✓", "☑", "⛤" },
+            new string[] { "✿", "❀" },
+            new string[] { "⓪", "①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩" },
+            new string[] { "⒈", "⒉", "⒊", "⒋", "⒌", "⒍", "⒎", "⒏", "⒐", "⒑" }
         };
 
-        // 按鍵格欄數（Aphy 版 v1.4.1 老闆裁決：1 列 10 項；master 維持 4）；
-        // 列數由符號數推導
-        private const int GRID_COLS = 10;
+        // 按鍵格欄數（Aphy 版 v1.4.2 老闆裁決：1 列 11 項；master 維持 4）
+        private const int GRID_COLS = 11;
 
         private NotifyIcon _trayIcon;
         private Label _display;
@@ -126,7 +121,7 @@ namespace PunctInput
             StartPosition = FormStartPosition.CenterScreen;
             BackColor = Color.FromArgb(230, 230, 230);
             Font = new Font("Segoe UI", 9F);
-            int gridRows = (Symbols.Length + GRID_COLS - 1) / GRID_COLS;
+            int gridRows = SymbolRows.Length;
             ClientSize = new Size(
                 Scale(GRID_COLS * 78 + 16, scale),
                 Scale(48 + gridRows * 62 + 20, scale));
@@ -157,31 +152,34 @@ namespace PunctInput
 
         private void BuildButtonGrid(float scale)
         {
-            int cols = GRID_COLS;
             int btnW = Scale(74, scale);
             int btnH = Scale(56, scale);
             int gap = Scale(4, scale);
             int left = Scale(8, scale);
             int top = Scale(52, scale);
 
-            for (int i = 0; i < Symbols.Length; i++)
+            for (int row = 0; row < SymbolRows.Length; row++)
             {
-                Button b = new Button();
-                b.Text = Symbols[i];
-                b.Tag = Symbols[i];
-                b.Font = new Font("Segoe UI", 16F, FontStyle.Regular);
-                b.Size = new Size(btnW, btnH);
-                b.Location = new Point(left + (i % cols) * (btnW + gap), top + (i / cols) * (btnH + gap));
-                b.FlatStyle = FlatStyle.Flat;
-                b.BackColor = Color.FromArgb(250, 250, 250);
-                b.ForeColor = Color.FromArgb(32, 32, 32);
-                b.FlatAppearance.BorderColor = Color.FromArgb(230, 230, 230);
-                b.FlatAppearance.BorderSize = 1;
-                b.FlatAppearance.MouseOverBackColor = Color.FromArgb(218, 218, 218);
-                b.FlatAppearance.MouseDownBackColor = Color.FromArgb(200, 200, 200);
-                b.TabStop = false;
-                b.Click += OnSymbolClick;
-                Controls.Add(b);
+                string[] rowSymbols = SymbolRows[row];
+                for (int col = 0; col < rowSymbols.Length; col++)
+                {
+                    Button b = new Button();
+                    b.Text = rowSymbols[col];
+                    b.Tag = rowSymbols[col];
+                    b.Font = new Font("Segoe UI", 16F, FontStyle.Regular);
+                    b.Size = new Size(btnW, btnH);
+                    b.Location = new Point(left + col * (btnW + gap), top + row * (btnH + gap));
+                    b.FlatStyle = FlatStyle.Flat;
+                    b.BackColor = Color.FromArgb(250, 250, 250);
+                    b.ForeColor = Color.FromArgb(32, 32, 32);
+                    b.FlatAppearance.BorderColor = Color.FromArgb(230, 230, 230);
+                    b.FlatAppearance.BorderSize = 1;
+                    b.FlatAppearance.MouseOverBackColor = Color.FromArgb(218, 218, 218);
+                    b.FlatAppearance.MouseDownBackColor = Color.FromArgb(200, 200, 200);
+                    b.TabStop = false;
+                    b.Click += OnSymbolClick;
+                    Controls.Add(b);
+                }
             }
         }
 

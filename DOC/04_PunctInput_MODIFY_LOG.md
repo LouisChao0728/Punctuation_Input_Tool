@@ -4,6 +4,29 @@
 
 ---
 
+## v1.4.2（2026-07-11，Aphy 分支）——列結構改版：1 列 11 項與獨立列
+
+### 觸發
+
+1. 老闆 Boss_Prompt（[look rs]）指示三項：A. 改成 1 個 row 有 11 個 item；B. ✿ ❀ 排序改接在 ⛤ 後面；C. 圈號 ⓪ 至 ⑩ 與點號 ⒈ 至 ⒑ 各自獨立 row。
+
+### 程式
+
+1. `src\Program.cs`：符號定義由流水陣列 `Symbols` 改為列結構陣列 `SymbolRows`（獨立列語意無法以流水折行表達）——5 列固定結構：第 1 列基礎 7 鍵＋〔〕﹝﹞←→（11 鍵）、第 2 列 ➤ 至 ⛤（11 鍵）、第 3 列 ✿ ❀（2 鍵）、第 4 列 ⓪ 至 ⑩（11 鍵，獨立列）、第 5 列 ⒈ 至 ⒑（10 鍵，獨立列）；`GRID_COLS` 10 → 11（列容量上限）；`BuildButtonGrid` 改巢狀迴圈按列建鍵，不足之欄留空。
+2. `src\app.manifest`：assemblyIdentity version 1.4.1.0 → 1.4.2.0。
+
+### 驗證
+
+1. V13：45 鍵逐列座標比對——5 列組成（11／11／2／11／10）與各列鍵序全數 PASS；視窗實測 880 × 407 px（96 DPI）；Ctrl + Alt + / 切換隱藏／重現皆 PASS。
+2. 建置：csc 0 錯誤，`dist\PunctInput_Aphy.exe` 17,920 bytes；測後以新版接續執行。
+3. 排錯紀錄：首次建置因 v1.4.1 實例持有檔案鎖失敗（測試腳本停程序步驟晚於建置，順序修正後通過）；列驗證初版以 hashtable 供 `Group-Object` 分組失敗（PowerShell 5.1 不解析 hashtable 鍵為屬性），改 `PSCustomObject` 後正確分列。
+
+### 版號
+
+1. Aphy 分支 v1.4.2；manifest assembly version 1.4.2.0。
+
+---
+
 ## v1.4.1（2026-07-11，Aphy 分支）——1 列 10 項
 
 ### 觸發
