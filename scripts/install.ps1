@@ -17,7 +17,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
-$srcExe = Join-Path $root "dist\PunctInput.exe"
+$srcExe = Join-Path $root "dist\PunctInput_Aphy.exe"
 $installDir = Join-Path $env:LOCALAPPDATA "Programs\PunctInput"
 $installExe = Join-Path $installDir "PunctInput.exe"
 $startMenuLnk = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\PunctInput.lnk"
@@ -25,7 +25,7 @@ $startupLnk = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\Star
 
 # 1. 確保建置產出存在
 if (-not (Test-Path $srcExe)) {
-    Write-Output "dist\PunctInput.exe 不存在，先執行建置..."
+    Write-Output "dist\PunctInput_Aphy.exe 不存在，先執行建置..."
     & (Join-Path $PSScriptRoot "build.ps1")
     if (-not (Test-Path $srcExe)) {
         Write-Error "建置後仍找不到 $srcExe"

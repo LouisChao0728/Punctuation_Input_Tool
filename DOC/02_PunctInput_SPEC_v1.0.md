@@ -3,7 +3,7 @@
 **文件版本**：v1.4（2026-07-11，Aphy 分支；master 對應 v1.3。檔名依 AssetM 慣例維持 v1.0，就地更新並於文末註記沿革）
 **定位**：本文件為實作與改動的唯一基準；規格與程式碼逐一對應，兩者不一致時以本文件與現行程式碼複核後修正。
 **對照文件**：`01_PunctInput_PRD.md`（產品定位與設計決策）、`03_PunctInput_SRS_v1.0.md`（FR / NFR 可測試需求與驗收條件）
-**實作對象**：`src\Program.cs`（單檔全部邏輯）、`src\app.manifest`、`scripts\build.ps1`、`dist\PunctInput.exe`
+**實作對象**：`src\Program.cs`（單檔全部邏輯）、`src\app.manifest`、`scripts\build.ps1`、`dist\PunctInput_Aphy.exe`（Aphy 分支建置產出；master 為 `dist\PunctInput.exe`）
 
 ---
 
@@ -52,7 +52,7 @@ Punctuation_Input_Tool/
 ├── scripts/
 │   └── build.ps1              建置腳本（csc.exe 一鍵編譯，UTF-8 BOM）
 └── dist/
-    └── PunctInput.exe         建置產出（14,848 bytes，2026-07-11）
+    └── PunctInput_Aphy.exe    Aphy 分支建置產出（17,920 bytes，2026-07-11）；master 分支產出 PunctInput.exe
 ```
 
 ### 3.1 `src\Program.cs` 內部結構
@@ -259,7 +259,7 @@ WM_CHAR 直遞          cls == "ConsoleWindowClass"？
 ### 8.1 `scripts\build.ps1` 全參數（NFR-02）
 
 1. `$ErrorActionPreference = "Stop"`。
-2. 路徑：`$root` 由 `Split-Path -Parent $PSScriptRoot`；`$csc` 固定 `C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe`；`$src` = `src\Program.cs`；`$manifest` = `src\app.manifest`；`$out` = `dist\PunctInput.exe`。
+2. 路徑：`$root` 由 `Split-Path -Parent $PSScriptRoot`；`$csc` 固定 `C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe`；`$src` = `src\Program.cs`；`$manifest` = `src\app.manifest`；`$out` = `dist\PunctInput_Aphy.exe`（Aphy 分支；master 為 `dist\PunctInput.exe`，dist 雙檔並存互不覆蓋）。
 3. 前置檢查：`csc.exe` 不存在則 `Write-Error` 中止。
 4. 輸出目錄：`New-Item -ItemType Directory -Force`（乾淨檢出時 `dist\` 不存在，csc 不自建目錄會失敗）。
 5. 編譯命令參數：
@@ -290,7 +290,7 @@ WM_CHAR 直遞          cls == "ConsoleWindowClass"？
 | .NET SDK | 無（本機僅 .NET Framework 4.8 runtime + 內建編譯器） |
 | AutoHotkey | 無 |
 | 建置指令 | `powershell -ExecutionPolicy Bypass -File scripts\build.ps1` |
-| 產出 | `dist\PunctInput.exe`（14,848 bytes，2026-07-11） |
+| 產出 | `dist\PunctInput_Aphy.exe`（17,920 bytes，2026-07-11）；master 為 `dist\PunctInput.exe`（17,408 bytes，v1.3） |
 
 ## 九、 錯誤處理與降級
 
@@ -346,9 +346,9 @@ WM_CHAR 直遞          cls == "ConsoleWindowClass"？
 
 ## 十三、 操作方式
 
-1. 安裝（FR-014，建議方式）：`powershell -ExecutionPolicy Bypass -File scripts\install.ps1`——部署 exe 至 `%LOCALAPPDATA%\Programs\PunctInput\`、建立開始功能表捷徑與開機自啟捷徑（Startup 資料夾）並啟動；`-NoStartup` 略過自啟捷徑（既有者一併移除）、`-NoLaunch` 安裝後不啟動；`dist\PunctInput.exe` 缺檔時自動先執行 `build.ps1`。
+1. 安裝（FR-014）：`powershell -ExecutionPolicy Bypass -File scripts\install.ps1`——部署 exe 至 `%LOCALAPPDATA%\Programs\PunctInput\`、建立開始功能表捷徑與開機自啟捷徑（Startup 資料夾）並啟動；`-NoStartup` 略過自啟捷徑（既有者一併移除）、`-NoLaunch` 安裝後不啟動；`dist\PunctInput_Aphy.exe` 缺檔時自動先執行 `build.ps1`。注意：安裝目的地與 Mutex 與 master 版共用，安裝 Aphy 版會取代既有安裝（老闆本機預設 master 版，2026-07-11 裁決）。
 2. 解除安裝：`powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1`——停止程序、移除兩處捷徑與安裝目錄，不動原始碼與 `dist\`。
-3. 免安裝直接執行：`dist\PunctInput.exe`（顯示視窗與系統匣圖示）。
+3. 免安裝直接執行：`dist\PunctInput_Aphy.exe`（顯示視窗與系統匣圖示；與 master 版共用單一實例 Mutex 與熱鍵，兩版不可同時執行）。
 4. 呼叫：Ctrl + Alt + / 顯示／隱藏（主鍵盤與數字鍵盤之 / 皆可）；Esc 或視窗關閉鈕隱藏；系統匣右鍵「結束」退出程序。
 5. 重建：`powershell -ExecutionPolicy Bypass -File scripts\build.ps1`。
 

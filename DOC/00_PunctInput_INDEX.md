@@ -50,7 +50,7 @@
 | `scripts\build.ps1` | 建置腳本：呼叫 `csc.exe` 編譯 `Program.cs`，產出 `dist\PunctInput.exe` | UTF-8 BOM；乾淨檢出時自動建立 `dist\`（NFR-02） |
 | `scripts\install.ps1` | 安裝腳本（FR-014）：部署 exe 至 `%LOCALAPPDATA%\Programs\PunctInput\`、建立開始功能表與開機自啟捷徑、啟動 | UTF-8 BOM；`-NoStartup` 略過自啟、`-NoLaunch` 不啟動；dist 缺檔時自動先建置 |
 | `scripts\uninstall.ps1` | 解除安裝腳本（FR-014）：停止程序、移除捷徑與安裝目錄 | UTF-8 BOM；不動原始碼與 `dist\` |
-| `dist\PunctInput.exe` | 建置產出（可執行檔） | 17,920 bytes（2026-07-11 v1.4 Aphy 實查值） |
+| `dist\PunctInput_Aphy.exe` | Aphy 分支建置產出（可執行檔）；master 分支產出 `dist\PunctInput.exe`，dist 雙檔並存 | 17,920 bytes（2026-07-11 v1.4 實查值） |
 | `DOC\` | 本專案文件目錄 | 詳見第四節 |
 | `CLAUDE.md` | 專案規則（比照 AssetM 慣例）：Rule 1 文件基準、Rule 2 異動紀錄、Rule 3 權限、Rule 4 檢核清單、Rule 5 送字路由義務、Rule 6 建置環境 | 已建立（2026-07-11） |
 | `README.md` | GitHub repo 首頁說明：功能特色、安裝與操作、環境需求、文件地圖、已知限制 | 2026-07-11 補檔（repo 公開後） |
@@ -78,7 +78,7 @@
 | 建置參數 | `/nologo /codepage:65001 /target:winexe /platform:anycpu /optimize+ /win32manifest:"src\app.manifest" /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /out:"dist\PunctInput.exe"`（NFR-02，全參數見 `scripts\build.ps1`） |
 | 除錯環境變數 | `PUNCTINPUT_DEBUG=1`（啟用時 append 寫入 `%TEMP%\PunctInput_debug.log`，FR-013） |
 | 單一實例識別 | Mutex 名稱 `PunctInput_SingleInstance_Mutex`（FR-011） |
-| 建置產出 | `dist\PunctInput.exe`（17,920 bytes，2026-07-11 v1.4 Aphy 實查值） |
+| 建置產出 | `dist\PunctInput_Aphy.exe`（17,920 bytes，v1.4）；master 為 `dist\PunctInput.exe`（17,408 bytes，v1.3） |
 
 ---
 

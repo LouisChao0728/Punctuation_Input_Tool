@@ -29,6 +29,12 @@
 
 1. Aphy 分支 v1.4；manifest assembly version 1.4.0.0。
 
+### 建置產出分流（2026-07-11 老闆指示補充）
+
+1. 老闆裁決：本機預設 master 版；`dist\` 分兩檔——`PunctInput.exe`＝master 版、`PunctInput_Aphy.exe`＝Aphy 版。
+2. 變更：Aphy 分支之 `build.ps1` 輸出改為 `dist\PunctInput_Aphy.exe`（master 分支維持 `dist\PunctInput.exe`，兩分支建置互不覆蓋）；`install.ps1` 來源同步改名，並註記安裝目的地與 Mutex 與 master 共用、安裝 Aphy 版會取代既有安裝。
+3. `dist\` 於 `.gitignore` 排除，雙檔僅存於本機工作目錄。
+
 ---
 
 ## 安裝工具與 GitHub 發布註記（2026-07-11）——程式本體無異動，版號維持 v1.3
