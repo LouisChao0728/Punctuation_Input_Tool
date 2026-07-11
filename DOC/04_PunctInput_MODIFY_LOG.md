@@ -4,6 +4,43 @@
 
 ---
 
+## v1.3（2026-07-11）——剪貼簿中轉繞過輸入法組字區
+
+### 觸發
+
+1. 老闆實機回報：鍵序 1 至 5（「」『』《》【】：，皆 CJK 標點）點擊輸入時呈現「預編譯狀態」（輸入法組字區），鍵序 6、7（●█，非 CJK）正常直接輸入；指示比照鍵序 6、7。
+2. 根因：非 EDIT 目標走 SendInput 路徑時，VK_PACKET 之 CJK 區段字元被注音 IME 攔入組字區；非 CJK 字元不受攔截。與 v1.0 開發期記事本觀察到的攔截行為同根因（當時僅對 EDIT 類以 WM_CHAR 繞過，未覆蓋 TSF 應用）。
+
+### 裁決
+
+1. DD-9 非 EDIT／非主控台目標之送字改「剪貼簿中轉自動貼上」（老闆三選項裁決選 1；候選「WM_CHAR 直遞擴大至全部目標」「暫切英文鍵盤佈局」落選）。
+2. 老闆前置條件：執行前確認 git 已保存現版——已確認工作樹乾淨、v1.2 完整入庫（commit `1661d74`），回退指令 `git reset --hard 1661d74`。
+3. 界線註記：DD-2 否決的是「手動剪貼簿」使用者體驗；DD-9 為內部傳輸機制，點擊行為不變（自動貼上）。
+
+### 程式
+
+1. `src\Program.cs`：
+   - `SendSymbolToTarget` 改三路路由：EDIT 類 WM_CHAR（不變）→ 主控台 SendInput（不變）→ 其餘改 `SendViaClipboardPaste`。
+   - 新增剪貼簿中轉機制：`SnapshotClipboard`（逐格式盡力快照）、`Clipboard.SetDataObject` 置入符號、`SendCtrlV`（送出前以 `GetAsyncKeyState` 檢測並釋放按住的 Shift／Alt／Win）、500 ms 計時器 `RestoreClipboardBackup` 延遲還原；連續點擊期間不重拍快照；程序結束時補執行未完成之還原。
+   - 後備：剪貼簿設定失敗（被鎖定等）退回 `SendUnicodeString`；除錯日誌新增 `route=ClipboardPaste` 與還原紀錄。
+2. `src\app.manifest`：assemblyIdentity version 1.2.0.0 → 1.3.0.0。
+
+### 文件
+
+1. 活文件同步：INDEX（版本、路由敘述、行數 741、exe 17,408 bytes）、PRD（目標 3、範圍 5.1.3、DD-9 補登、R4 改寫、R6 新增）、SPEC（§3.1、§7 三路決策樹與新 §7.6、§7.5 日誌欄位、§9、R4／R6、§12 DD-9、V10、沿革）、SRS（FR-004、FR-005、沿革）、專案 CLAUDE.md Rule 5 路由規則改寫。
+
+### 驗證
+
+1. V10：剪貼簿路徑端對端實測——WPF TextBox（HwndWrapper 類，非 EDIT）為目標，點擊 「」／：／● 三鍵，文字完整定稿到達 `「」：●`（無組字狀態），剪貼簿於還原計時器後回復原始標記內容，兩項皆 PASS。
+2. 建置：csc 0 錯誤，`dist\PunctInput.exe` 17,408 bytes（2026-07-11）；測後保留執行實例供老闆直接使用。
+3. 老闆實機複測項：於原回報發生預編譯狀態之應用程式點擊鍵序 1 至 5，確認送出即定稿。
+
+### 版號
+
+1. v1.3；manifest assembly version 1.3.0.0。
+
+---
+
 ## v1.2（2026-07-11）——括號成組、4 欄配置、數字鍵盤鍵位
 
 ### 觸發

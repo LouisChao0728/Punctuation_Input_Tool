@@ -1,6 +1,6 @@
 # PunctInput 軟體需求規格書（SRS）v1.0
 
-**文件版本**：v1.2（2026-07-11；檔名依 AssetM 慣例維持 v1.0，就地更新並於文末註記沿革）
+**文件版本**：v1.3（2026-07-11；檔名依 AssetM 慣例維持 v1.0，就地更新並於文末註記沿革）
 **對照文件**：`01_PunctInput_PRD.md`（第三章「目標與成功判準」為本文件第三章追蹤矩陣之來源）；`02_PunctInput_SPEC_v1.0.md`（實作基準，FR 表「SPEC 對照」欄逐條對應；內容不一致時以 SPEC 最新版為準）。
 **優先度定義**：P0 = v1.0 必要（缺此項工具核心運作或老闆明訂約束不成立）；P1 = v1.0 應有（強化可靠度或使用體驗，缺此項工具仍可運作）；P2 = 可延後（邊界情境提示，非日常操作路徑）。
 
@@ -13,8 +13,8 @@
 | FR-001 | 全域快捷鍵 Ctrl + Alt + / 切換視窗顯示／隱藏；主鍵盤 VK_OEM_2 與數字鍵盤 VK_DIVIDE 雙註冊（MOD_CONTROL + MOD_ALT + MOD_NOREPEAT；v1.1 依 DD-8 改鍵、v1.2 新增數字鍵盤鍵位） | P0 | §6.1、§6.3 | 對應 V9（keybd_event 注入主鍵盤與數字鍵盤 /：切換隱藏與重現皆 PASS，2026-07-11）；歷史驗證紀錄見 V5、V8 |
 | FR-002 | Esc 於視窗顯示期間全域隱藏視窗（顯示期間才註冊裸 Esc 熱鍵） | P0 | §6.1、§6.2 | 對應事實清單 V4（keybd_event 注入 Esc，視窗實測隱藏，PASS） |
 | FR-003 | 7 個符號按鍵依序：「」 『』 《》 【】 ： ● █（v1.2 起 4 組括號一鍵成對輸入兩字元 + 3 個單符號），4 欄 2 列 | P0 | §5.1、§5.2、§4.3 | 對應 V9（按鍵枚舉 7 鍵組成與文字全對）；點擊成組鍵驗證一次輸入成對兩字元（碼位對照 §5.1 表：U+300C U+300D／U+300E U+300F／U+300A U+300B／U+3010 U+3011／U+FF1A／U+25CF／U+2588） |
-| FR-004 | 點擊符號送往前景執行緒焦點控制項（GetGUIThreadInfo），依 DD-4 類別路由送出 | P0 | §7.1、§7.2 | 對應事實清單 V3（背景記事本 Edit 控制項全 11 符號依序完整到達，PASS）；其餘應用程式之路由正確性另列事實清單 V7，待老闆實機驗證 |
-| FR-005 | WM_CHAR 投遞失敗（PostMessageW 回傳 false）時後備 SendInput | P1 | §7.3 | 設定 `PUNCTINPUT_DEBUG=1` 後模擬 PostMessageW 失敗情境（例如焦點視窗於送出瞬間關閉），檢視 `%TEMP%\PunctInput_debug.log` 出現 `route=SendInput` 之後備紀錄行且 `injected` 數量正確 |
+| FR-004 | 點擊符號送往前景執行緒焦點控制項（GetGUIThreadInfo），依類別三路路由送出：EDIT 類走 WM_CHAR、主控台走 SendInput、其餘走剪貼簿中轉自動貼上（DD-4／DD-9，v1.3 起送出即定稿、不進輸入法組字區） | P0 | §7.1、§7.2、§7.6 | 對應 V3（EDIT 路徑：記事本全符號到達）與 V10（剪貼簿路徑：WPF 非 EDIT 目標 `「」：●` 定稿到達且剪貼簿還原，PASS） |
+| FR-005 | WM_CHAR 投遞失敗（PostMessageW 回傳 false）或剪貼簿設定失敗（被鎖定等）時後備 SendInput | P1 | §7.3 | 設定 `PUNCTINPUT_DEBUG=1` 後模擬失敗情境，檢視 `%TEMP%\PunctInput_debug.log` 出現後備紀錄行（`route=SendInput (WM_CHAR fallback)` 或 `clipboard set failed`）且 `injected` 數量正確 |
 | FR-006 | 不搶焦點：WS_EX_NOACTIVATE + WM_MOUSEACTIVATE 回 MA_NOACTIVATE + ShowWithoutActivation | P0 | §3.1、§6.3 | 目視驗證點擊符號按鈕前後，前景應用程式之視窗標題列（Active 狀態）與游標位置未被搶走，PunctInput 視窗未獲得 Activate |
 | FR-007 | 視窗置頂（TopMost + WS_EX_TOPMOST） | P1 | §4.1 | 目視驗證面板顯示期間恆置於其他一般視窗之上，切換前景應用程式後面板仍可見 |
 | FR-008 | 顯示區回饋最後點擊符號（比照小算盤顯示區，右對齊） | P1 | §4.2 | 目視驗證點擊任一符號後，上方顯示區即時更新為該符號並右對齊呈現 |
@@ -49,4 +49,4 @@
 
 ---
 
-*本文件依事實清單 FR-001 至 FR-013、NFR-01 至 NFR-05 逐條轉譯；FR／NFR 編號固定，後續增修不得改號。追蹤矩陣第三章之 PRD 目標引自 `01_PunctInput_PRD.md` 第三章。沿革：v1.0（2026-07-11）首版落檔；v1.1（2026-07-11）FR-001／FR-009／FR-011／FR-012 之呼叫快捷鍵依 DD-8 改為 Ctrl + Alt + /；v1.2（2026-07-11）FR-001 新增數字鍵盤鍵位、FR-003 改 7 鍵成組 4 欄 2 列、FR-012 警告訊息列失敗鍵位。*
+*本文件依事實清單 FR-001 至 FR-013、NFR-01 至 NFR-05 逐條轉譯；FR／NFR 編號固定，後續增修不得改號。追蹤矩陣第三章之 PRD 目標引自 `01_PunctInput_PRD.md` 第三章。沿革：v1.0（2026-07-11）首版落檔；v1.1（2026-07-11）FR-001／FR-009／FR-011／FR-012 之呼叫快捷鍵依 DD-8 改為 Ctrl + Alt + /；v1.2（2026-07-11）FR-001 新增數字鍵盤鍵位、FR-003 改 7 鍵成組 4 欄 2 列、FR-012 警告訊息列失敗鍵位；v1.3（2026-07-11）FR-004／FR-005 依 DD-9 改三路路由與剪貼簿後備條件。*

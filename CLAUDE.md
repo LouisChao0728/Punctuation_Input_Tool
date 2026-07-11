@@ -47,9 +47,9 @@
 
 ## Rule 5：送字路由特別義務
 
-本工具送字邏輯（`Program.cs` 內 `SendSymbolToTarget` 方法）依 DD-4 裁決，依焦點控制項類別名分流：類別名含 `EDIT`（不分大小寫）者走 `WM_CHAR` 直遞（`PostMessageW`），其餘目標走 `SendInput`（`KEYEVENTF_UNICODE`），API 失敗時後備 `SendInput`（對應 FR-004、FR-005）。
+本工具送字邏輯（`Program.cs` 內 `SendSymbolToTarget` 方法）依 DD-4 與 DD-9 裁決，依焦點控制項類別名三路分流：類別名含 `EDIT`（不分大小寫）者走 `WM_CHAR` 直遞（`PostMessageW`）；`ConsoleWindowClass` 走 `SendInput`（`KEYEVENTF_UNICODE`）；其餘目標走剪貼簿中轉自動貼上（`SendViaClipboardPaste`，含剪貼簿快照與 500 ms 延遲還原）；`WM_CHAR` 投遞失敗或剪貼簿設定失敗時後備 `SendInput`（對應 FR-004、FR-005，詳 SPEC §7）。
 
-**修改 `SendSymbolToTarget` 或其路由判準時，必須：**
+**修改 `SendSymbolToTarget`、`SendViaClipboardPaste` 或其路由判準時，必須：**
 
 1. 同步更新 SPEC 文件之「送字策略」章節，反映最新路由邏輯與判準。
 2. 設定環境變數 `PUNCTINPUT_DEBUG=1` 後實機測試，以 `%TEMP%\PunctInput_debug.log`（FR-013）記錄之路由結果（route、focus handle、控制項類別、投遞結果）作為修改生效之實測證據，不得僅以程式碼審閱替代實測。

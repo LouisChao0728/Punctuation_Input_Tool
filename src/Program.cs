@@ -71,6 +71,13 @@ namespace PunctInput
         private const uint KEYEVENTF_KEYUP = 0x0002;
         private const uint KEYEVENTF_UNICODE = 0x0004;
 
+        private const ushort VK_CONTROL = 0x11;
+        private const ushort VK_SHIFT = 0x10;
+        private const ushort VK_MENU = 0x12;   // Alt
+        private const ushort VK_LWIN = 0x5B;
+        private const ushort VK_RWIN = 0x5C;
+        private const ushort VK_V = 0x56;
+
         // ---- 符號清單（Boss_Prompt 指定順序；v1.2 起括號成組一鍵成對輸入）----
         // 「」 『』 《》 【】 ： ● █（4 組括號 + 3 個單符號，共 7 鍵）
         private static readonly string[] Symbols = new string[]
@@ -85,6 +92,11 @@ namespace PunctInput
         private bool _toggleHotkeyOk;
         private bool _toggleNumHotkeyOk;
         private bool _escHotkeyRegistered;
+
+        // 剪貼簿中轉狀態（DD-9）：備份使用者剪貼簿，貼上後延遲還原
+        private IDataObject _clipboardBackup;
+        private bool _restorePending;
+        private System.Windows.Forms.Timer _restoreTimer;
 
         public PunctPadForm()
         {
@@ -104,6 +116,10 @@ namespace PunctInput
             BuildDisplay(scale);
             BuildButtonGrid(scale);
             BuildTrayIcon();
+
+            _restoreTimer = new System.Windows.Forms.Timer();
+            _restoreTimer.Interval = 500;
+            _restoreTimer.Tick += OnRestoreTimerTick;
         }
 
         // ---- UI 建置（比照小算盤：上方顯示區 + 下方按鍵格）----
@@ -319,6 +335,12 @@ namespace PunctInput
                 HidePad();
                 return;
             }
+            if (_restorePending)
+            {
+                _restoreTimer.Stop();
+                _restorePending = false;
+                RestoreClipboardBackup();
+            }
             if (_trayIcon != null)
             {
                 _trayIcon.Visible = false;
@@ -372,15 +394,17 @@ namespace PunctInput
             SendSymbolToTarget(symbol);
         }
 
-        // 送字策略（類別路由，2026-07-11 對抗審查修正）：
+        // 送字策略（類別路由；v1.3 依 DD-9 改版）：
         // 1. 傳統 IMM 控制項（類別名含 EDIT，涵蓋 Edit、RICHEDIT50W、
-        //    WindowsForms10.EDIT 等）走 WM_CHAR 直遞：本機實測 SendInput
-        //    （KEYEVENTF_UNICODE）在注音 IME 開啟時會被組字層攔截延後提交，
-        //    WM_CHAR 攜帶字元字面值，不經 IME。
-        // 2. 其餘目標（Chromium / Electron / UWP / Word 等 TSF 應用、主控台、
-        //    Windows Terminal）走 SendInput：此類視窗可能將佇列中的 WM_CHAR
-        //    靜默忽略（PostMessage 回傳 TRUE 僅代表入佇列，不代表已處理），
-        //    而其輸入管線對 VK_PACKET 不依賴 IMM 組字，SendInput 為可靠路徑。
+        //    WindowsForms10.EDIT 等）走 WM_CHAR 直遞：WM_CHAR 攜帶字元字面值
+        //    不經 IME，實測無組字問題；投遞失敗時後備 SendInput。
+        // 2. 主控台（ConsoleWindowClass）走 SendInput：legacy conhost 之
+        //    Ctrl + V 貼上不可靠，維持鍵盤注入。
+        // 3. 其餘目標（Chromium / Electron / UWP / Word 等 TSF 應用）走
+        //    剪貼簿中轉自動貼上（SendViaClipboardPaste）：SendInput 的
+        //    VK_PACKET 對 CJK 區段字元會被注音 IME 攔入組字區（2026-07-11
+        //    老闆實機回報「預編譯狀態」，鍵序 1 至 5 中招、非 CJK 之 ●█
+        //    直接通過），剪貼簿貼上完全繞過 IME。
         private void SendSymbolToTarget(string text)
         {
             IntPtr fgWin = GetForegroundWindow();
@@ -423,11 +447,152 @@ namespace PunctInput
                 {
                     return;
                 }
+                DebugLog("SendSymbolToTarget route=SendInput (WM_CHAR fallback)");
+                SendUnicodeString(text);
+                return;
+            }
+            if (cls == "ConsoleWindowClass")
+            {
+                DebugLog(string.Format(
+                    "SendSymbolToTarget route=SendInput (console) text=U+{0:X4} focus=0x{1:X}",
+                    (int)text[0], focus.ToInt64()));
+                SendUnicodeString(text);
+                return;
             }
             DebugLog(string.Format(
-                "SendSymbolToTarget route=SendInput text=U+{0:X4} focus=0x{1:X} class={2}",
+                "SendSymbolToTarget route=ClipboardPaste text=U+{0:X4} focus=0x{1:X} class={2}",
                 (int)text[0], focus.ToInt64(), cls));
-            SendUnicodeString(text);
+            SendViaClipboardPaste(text);
+        }
+
+        // ---- 剪貼簿中轉（DD-9）----
+
+        private void SendViaClipboardPaste(string text)
+        {
+            // 還原尚未執行時不重拍快照，保住使用者原始剪貼簿內容
+            if (!_restorePending)
+            {
+                _clipboardBackup = SnapshotClipboard();
+            }
+            _restoreTimer.Stop();
+            try
+            {
+                Clipboard.SetDataObject(text, true);
+            }
+            catch (Exception ex)
+            {
+                DebugLog("clipboard set failed: " + ex.Message + ", fallback SendInput");
+                if (!_restorePending)
+                {
+                    _clipboardBackup = null;
+                }
+                SendUnicodeString(text);
+                return;
+            }
+            _restorePending = true;
+            SendCtrlV();
+            _restoreTimer.Start();
+        }
+
+        private void OnRestoreTimerTick(object sender, EventArgs e)
+        {
+            _restoreTimer.Stop();
+            _restorePending = false;
+            RestoreClipboardBackup();
+        }
+
+        private void RestoreClipboardBackup()
+        {
+            try
+            {
+                if (_clipboardBackup != null)
+                {
+                    Clipboard.SetDataObject(_clipboardBackup, true);
+                }
+                else
+                {
+                    Clipboard.Clear();
+                }
+                DebugLog("clipboard restored");
+            }
+            catch (Exception ex)
+            {
+                DebugLog("clipboard restore failed: " + ex.Message);
+            }
+            _clipboardBackup = null;
+        }
+
+        // 盡力快照剪貼簿全部格式；個別格式取出失敗時跳過該格式
+        private static IDataObject SnapshotClipboard()
+        {
+            try
+            {
+                IDataObject src = Clipboard.GetDataObject();
+                if (src == null)
+                {
+                    return null;
+                }
+                string[] formats = src.GetFormats(false);
+                DataObject copy = new DataObject();
+                int copied = 0;
+                for (int i = 0; i < formats.Length; i++)
+                {
+                    try
+                    {
+                        object data = src.GetData(formats[i], false);
+                        if (data != null)
+                        {
+                            copy.SetData(formats[i], false, data);
+                            copied++;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // 該格式無法複製（COM 代理等），跳過
+                    }
+                }
+                return copied > 0 ? (IDataObject)copy : null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        // 送出 Ctrl + V；先釋放使用者可能按住的 Shift / Alt / Win，
+        // 避免組合成 Ctrl + Shift + V 等變體
+        private static void SendCtrlV()
+        {
+            ReleaseModifierIfDown(VK_SHIFT);
+            ReleaseModifierIfDown(VK_MENU);
+            ReleaseModifierIfDown(VK_LWIN);
+            ReleaseModifierIfDown(VK_RWIN);
+
+            INPUT[] inputs = new INPUT[4];
+            inputs[0].type = INPUT_KEYBOARD;
+            inputs[0].U.ki.wVk = VK_CONTROL;
+            inputs[1].type = INPUT_KEYBOARD;
+            inputs[1].U.ki.wVk = VK_V;
+            inputs[2].type = INPUT_KEYBOARD;
+            inputs[2].U.ki.wVk = VK_V;
+            inputs[2].U.ki.dwFlags = KEYEVENTF_KEYUP;
+            inputs[3].type = INPUT_KEYBOARD;
+            inputs[3].U.ki.wVk = VK_CONTROL;
+            inputs[3].U.ki.dwFlags = KEYEVENTF_KEYUP;
+            SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(INPUT)));
+        }
+
+        private static void ReleaseModifierIfDown(ushort vk)
+        {
+            if ((GetAsyncKeyState(vk) & 0x8000) == 0)
+            {
+                return;
+            }
+            INPUT[] up = new INPUT[1];
+            up[0].type = INPUT_KEYBOARD;
+            up[0].U.ki.wVk = vk;
+            up[0].U.ki.dwFlags = KEYEVENTF_KEYUP;
+            SendInput(1, up, Marshal.SizeOf(typeof(INPUT)));
         }
 
         private static bool IsClassicEditClass(string cls)
@@ -521,6 +686,9 @@ namespace PunctInput
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern int GetClassName(IntPtr hWnd, System.Text.StringBuilder buffer, int maxCount);
+
+        [DllImport("user32.dll")]
+        private static extern short GetAsyncKeyState(int vKey);
 
         [StructLayout(LayoutKind.Sequential)]
         private struct GUITHREADINFO

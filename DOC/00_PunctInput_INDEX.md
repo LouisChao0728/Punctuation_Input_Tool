@@ -2,7 +2,7 @@
 
 **用途**：專案結構之單一入口索引，供人與 AI 助理快速定位檔案職責、快捷鍵操作與文件。
 **體例依據**：文件體系比照 Asset_Management（AssetM）專案慣例（老闆 2026-07-11 指示）。
-**對應版本**：v1.2（2026-07-11，括號成組一鍵成對輸入、4 欄配置、快捷鍵涵蓋數字鍵盤 /）
+**對應版本**：v1.3（2026-07-11，非 EDIT 目標送字改剪貼簿中轉自動貼上，繞過輸入法組字區）
 
 ---
 
@@ -15,7 +15,7 @@
 | 技術棧 | C# WinForms + Windows 內建 `csc.exe`（DD-1，候選 Python 3.11 + tkinter、Electron 落選） |
 | 送出行為 | 點擊符號直接輸入至前景應用程式（DD-2，候選「複製到剪貼簿」「兩者並行」落選） |
 | 常駐機制 | 系統匣常駐（NotifyIcon）；Esc 與視窗關閉鈕僅隱藏視窗，程序結束僅由系統匣選單「結束」（DD-3） |
-| 版本 | v1.2（manifest assembly version 1.2.0.0），2026-07-11 |
+| 版本 | v1.3（manifest assembly version 1.3.0.0），2026-07-11 |
 | 來源 | 老闆 Boss_Prompt 2026-07-11 指示建立；文件體系比照 Asset_Management 專案 |
 | 權限範圍 | `Claude_WorkSpace` 非 Global Rules 完全權限路徑，本專案異動依老闆指示執行，不適用全權開發授權 |
 
@@ -25,7 +25,7 @@
 |------|---------|------|--------------|
 | Ctrl + Alt + / | 全域熱鍵（MOD_CONTROL + MOD_ALT + MOD_NOREPEAT；主鍵盤 VK_OEM_2 與數字鍵盤 VK_DIVIDE 雙註冊，v1.2 起） | 視窗顯示／隱藏切換 | FR-001 |
 | Esc | 全域熱鍵，僅於視窗顯示期間註冊 | 隱藏視窗 | FR-002 |
-| 點擊符號按鈕（7 鍵） | 滑鼠點擊 | 送往前景執行緒焦點控制項，依 DD-4 類別路由送出（WM_CHAR 或 SendInput，失敗後備 SendInput）；括號組一鍵成對輸入兩字元 | FR-003、FR-004、FR-005 |
+| 點擊符號按鈕（7 鍵） | 滑鼠點擊 | 送往前景執行緒焦點控制項，依類別三路路由（DD-4／DD-9）：EDIT 類走 WM_CHAR、主控台走 SendInput、其餘走剪貼簿中轉自動貼上；失敗後備 SendInput；括號組一鍵成對輸入兩字元 | FR-003、FR-004、FR-005 |
 | 視窗關閉鈕 | 滑鼠點擊 | 視同隱藏（FormClosing 取消 + Hide），不結束程序 | FR-010 |
 | 系統匣圖示雙擊 | 滑鼠雙擊 | 顯示／隱藏切換 | FR-009 |
 | 系統匣右鍵選單「顯示／隱藏（Ctrl + Alt + /）」 | 滑鼠右鍵 | 顯示／隱藏切換 | FR-009 |
@@ -41,10 +41,10 @@
 
 | 路徑 | 職責 | 備考 |
 |------|------|------|
-| `src\Program.cs` | C# WinForms 單檔全部邏輯：視窗建置、DPI 縮放、全域熱鍵、符號送出路由（DD-4）、系統匣、除錯日誌（FR-013） | 577 行（2026-07-11 v1.2 實查）；語言層級 C# 5（NFR-05） |
+| `src\Program.cs` | C# WinForms 單檔全部邏輯：視窗建置、DPI 縮放、全域熱鍵、符號送出三路路由（DD-4／DD-9，含剪貼簿快照與還原）、系統匣、除錯日誌（FR-013） | 741 行（2026-07-11 v1.3 實查）；語言層級 C# 5（NFR-05） |
 | `src\app.manifest` | DPI 感知宣告（`dpiAware=true`，NFR-03）+ Common Controls v6 相依宣告 | assembly version 1.0.0.0 |
 | `scripts\build.ps1` | 建置腳本：呼叫 `csc.exe` 編譯 `Program.cs`，產出 `dist\PunctInput.exe` | UTF-8 BOM；乾淨檢出時自動建立 `dist\`（NFR-02） |
-| `dist\PunctInput.exe` | 建置產出（可執行檔） | 14,848 bytes（2026-07-11 實查值） |
+| `dist\PunctInput.exe` | 建置產出（可執行檔） | 17,408 bytes（2026-07-11 v1.3 實查值） |
 | `DOC\` | 本專案文件目錄 | 詳見第四節 |
 | `CLAUDE.md` | 專案規則（比照 AssetM 慣例）：Rule 1 文件基準、Rule 2 異動紀錄、Rule 3 權限、Rule 4 檢核清單、Rule 5 送字路由義務、Rule 6 建置環境 | 已建立（2026-07-11） |
 
@@ -52,11 +52,11 @@
 
 | 文件 | 用途 | 版本 |
 |------|------|------|
-| `00_PunctInput_INDEX.md` | 本檔，專案索引 | v1.2（2026-07-11） |
-| `01_PunctInput_PRD.md` | 產品需求文件（含設計決策紀錄 DD-1 至 DD-8、風險 R1 至 R5） | v1.2（2026-07-11） |
-| `02_PunctInput_SPEC_v1.0.md` | 專案規格書（實作基準；檔名依慣例維持 v1.0，內容就地更新） | v1.2（2026-07-11） |
-| `03_PunctInput_SRS_v1.0.md` | 軟體需求規格書（FR-001 至 FR-013、NFR-01 至 NFR-05；檔名依慣例維持 v1.0，內容就地更新） | v1.2（2026-07-11） |
-| `04_PunctInput_MODIFY_LOG.md` | 異動摘要紀錄（最新版在上） | v1.2（2026-07-11） |
+| `00_PunctInput_INDEX.md` | 本檔，專案索引 | v1.3（2026-07-11） |
+| `01_PunctInput_PRD.md` | 產品需求文件（含設計決策紀錄 DD-1 至 DD-9、風險 R1 至 R6） | v1.3（2026-07-11） |
+| `02_PunctInput_SPEC_v1.0.md` | 專案規格書（實作基準；檔名依慣例維持 v1.0，內容就地更新） | v1.3（2026-07-11） |
+| `03_PunctInput_SRS_v1.0.md` | 軟體需求規格書（FR-001 至 FR-013、NFR-01 至 NFR-05；檔名依慣例維持 v1.0，內容就地更新） | v1.3（2026-07-11） |
+| `04_PunctInput_MODIFY_LOG.md` | 異動摘要紀錄（最新版在上） | v1.3（2026-07-11） |
 
 ## 五、 環境速查
 
@@ -68,7 +68,7 @@
 | 建置參數 | `/nologo /codepage:65001 /target:winexe /platform:anycpu /optimize+ /win32manifest:"src\app.manifest" /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /out:"dist\PunctInput.exe"`（NFR-02，全參數見 `scripts\build.ps1`） |
 | 除錯環境變數 | `PUNCTINPUT_DEBUG=1`（啟用時 append 寫入 `%TEMP%\PunctInput_debug.log`，FR-013） |
 | 單一實例識別 | Mutex 名稱 `PunctInput_SingleInstance_Mutex`（FR-011） |
-| 建置產出 | `dist\PunctInput.exe`（14,848 bytes，2026-07-11 實查值） |
+| 建置產出 | `dist\PunctInput.exe`（17,408 bytes，2026-07-11 v1.3 實查值） |
 
 ---
 

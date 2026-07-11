@@ -1,6 +1,6 @@
 # PunctInput 專案規格書（SPEC）v1.0
 
-**文件版本**：v1.2（2026-07-11；檔名依 AssetM 慣例維持 v1.0，就地更新並於文末註記沿革）
+**文件版本**：v1.3（2026-07-11；檔名依 AssetM 慣例維持 v1.0，就地更新並於文末註記沿革）
 **定位**：本文件為實作與改動的唯一基準；規格與程式碼逐一對應，兩者不一致時以本文件與現行程式碼複核後修正。
 **對照文件**：`01_PunctInput_PRD.md`（產品定位與設計決策）、`03_PunctInput_SRS_v1.0.md`（FR / NFR 可測試需求與驗收條件）
 **實作對象**：`src\Program.cs`（單檔全部邏輯）、`src\app.manifest`、`scripts\build.ps1`、`dist\PunctInput.exe`
@@ -12,7 +12,7 @@
 1. 產品：標點符號輸入工具（PunctInput），Windows 桌面用之常駐小工具。UI 比照 Windows 10 小算盤：上方顯示區 + 下方按鍵格。
 2. 核心行為：點擊符號按鈕，即以送字策略（第七章）將該符號直接輸入至前景應用程式的焦點控制項（DD-2 送出行為）。工具視窗不搶焦點，點擊後前景應用程式仍保有輸入游標。
 3. 呼叫方式：全域快捷鍵 Ctrl + Alt + / 切換視窗顯示／隱藏（FR-001，v1.1 依 DD-8 改鍵；v1.2 起主鍵盤與數字鍵盤之 / 皆可）；程序常駐系統匣，關閉視窗僅隱藏，結束程序須由系統匣選單「結束」（DD-3、FR-010）。
-4. 版本：v1.2（`app.manifest` assemblyIdentity version `1.2.0.0`），日期 2026-07-11。
+4. 版本：v1.3（`app.manifest` assemblyIdentity version `1.3.0.0`），日期 2026-07-11。
 5. 來源與授權界線：老闆 Boss_Prompt 2026-07-11 指示建立，文件體系比照 `Asset_Management` 專案。`Claude_WorkSpace` 非 Global Rules 完全權限路徑，本專案異動依老闆當次指示執行，不主張全權開發授權。
 
 ## 二、 技術棧與依賴
@@ -68,7 +68,9 @@ Punctuation_Input_Tool/
 | `OnHandleCreated` / `OnHandleDestroyed` / `OnVisibleChanged` | 熱鍵生命週期（第六章） |
 | `WndProc`(`WM_HOTKEY`) | 熱鍵訊息分派（FR-001、FR-002） |
 | `OnFormClosing` | 關閉鈕視同隱藏（FR-010） |
-| `SendSymbolToTarget` / `SendUnicodeString` | 送字策略雙路徑（第七章） |
+| `SendSymbolToTarget` / `SendViaClipboardPaste` / `SendUnicodeString` | 送字策略三路路由與剪貼簿中轉（第七章） |
+| `SnapshotClipboard` / `RestoreClipboardBackup` / `OnRestoreTimerTick` | 剪貼簿快照與延遲還原（DD-9，§7.6） |
+| `SendCtrlV` / `ReleaseModifierIfDown` | 貼上鍵送出與修飾鍵清理（§7.6） |
 | `DebugLog` | 除錯日誌（FR-013） |
 | P/Invoke 宣告與結構 | user32.dll 匯入、`GUITHREADINFO`／`INPUT`／`KEYBDINPUT` 等 |
 
@@ -180,7 +182,7 @@ Punctuation_Input_Tool/
 2. `OnFormClosing`：`CloseReason.UserClosing` 且非結束旗標時，`e.Cancel = true` 並 `HidePad()`（關閉鈕視同隱藏）。
 3. `ExitApp`：設 `_exiting = true` 後 `Close()`；此時 `OnFormClosing` 不攔截，並釋放 `NotifyIcon`（`Visible = false` + `Dispose`）。
 
-## 七、 送字策略（DD-4 路由）
+## 七、 送字策略（DD-4／DD-9 三路路由）
 
 ### 7.1 焦點解析（FR-004）
 
@@ -189,37 +191,36 @@ Punctuation_Input_Tool/
 3. `GetGUIThreadInfo(tid, ref gti)` 取該執行緒焦點控制項 `gti.hwndFocus` 作為送字目標 `focus`；若為 `Zero`，退回以 `fgWin` 為目標。
 4. `GetClassNameOf(focus)` 取目標控制項類別名 `cls`。
 
-### 7.2 路由決策樹（DD-4）
+### 7.2 路由決策樹（DD-4／DD-9）
 
 ```
 取得焦點目標 focus 與類別名 cls
         │
    cls 含 "EDIT"（不分大小寫，IsClassicEditClass）？
         │
-  ┌─────┴─────┐
-  是            否
-  │             │
-WM_CHAR 直遞     SendInput（KEYEVENTF_UNICODE）
-（PostMessageW）        │
-  │                  送出完成、記錄日誌
-  逐字元 PostMessageW
-  │
- allPosted？
-  ┌───┴───┐
-  是        否（任一失敗）
-  │         │
- 完成返回   後備：SendInput（FR-005）
+  ┌─────┴─────────────────┐
+  是                        否
+  │                         │
+WM_CHAR 直遞          cls == "ConsoleWindowClass"？
+（PostMessageW）              │
+  │                    ┌─────┴─────┐
+ allPosted？            是            否
+  ┌───┴───┐            │             │
+  是        否      SendInput      剪貼簿中轉自動貼上
+  │         │  （KEYEVENTF_UNICODE） （SendViaClipboardPaste，§7.6）
+ 完成返回   後備：SendInput（FR-005）      │
+                                    剪貼簿設定失敗？→ 後備：SendInput（FR-005）
 ```
 
-1. 傳統 IMM 控制項（`IsClassicEditClass`：`cls.IndexOf("EDIT", OrdinalIgnoreCase) >= 0`，涵蓋 `Edit`、`RICHEDIT50W`、`WindowsForms10.EDIT` 等）走 WM_CHAR 直遞：逐 UTF-16 碼元 `PostMessage(focus, WM_CHAR, (IntPtr)text[i], (IntPtr)1)`。
-   - 依據：2026-07-11 本機實測 SendInput（`KEYEVENTF_UNICODE`）在注音 IME 開啟時被組字層攔截延後提交；WM_CHAR 攜帶字元字面值不經 IME。
-2. 其餘目標（Chromium、Electron、UWP、Word 等 TSF 應用、主控台、Windows Terminal）走 SendInput：此類視窗可能將佇列中的 WM_CHAR 靜默忽略（對抗審查 3/3 確認 `PostMessage` 回傳 TRUE 僅代表入佇列，不代表已處理）。
-3. WM_CHAR 綁定 `PostMessageW`（DD-6）：`DllImport` 明確 `EntryPoint = "PostMessageW"`。實測修正——預設 ANSI 綁定會把 CJK WM_CHAR 字元經代碼頁轉為問號。
+1. 傳統 IMM 控制項（`IsClassicEditClass`：`cls.IndexOf("EDIT", OrdinalIgnoreCase) >= 0`，涵蓋 `Edit`、`RICHEDIT50W`、`WindowsForms10.EDIT` 等）走 WM_CHAR 直遞：逐 UTF-16 碼元 `PostMessage(focus, WM_CHAR, (IntPtr)text[i], (IntPtr)1)`；WM_CHAR 攜帶字元字面值不經 IME（2026-07-11 實測無組字問題）。
+2. 主控台（`ConsoleWindowClass`）走 SendInput：legacy conhost 之 Ctrl + V 貼上不可靠，維持鍵盤注入。
+3. 其餘目標（Chromium、Electron、UWP、Word 等 TSF 應用）走剪貼簿中轉自動貼上（DD-9，v1.3）：SendInput 之 VK_PACKET 對 CJK 區段字元（U+300A 至 U+3011、U+FF1A 等）會被注音 IME 攔入組字區呈「預編譯狀態」（2026-07-11 老闆實機回報，鍵序 1 至 5 中招、非 CJK 之 ●█ 直接通過）；剪貼簿貼上完全繞過 IME，送出即定稿。
+4. WM_CHAR 綁定 `PostMessageW`（DD-6）：`DllImport` 明確 `EntryPoint = "PostMessageW"`。實測修正——預設 ANSI 綁定會把 CJK WM_CHAR 字元經代碼頁轉為問號。
 
 ### 7.3 後備條件（FR-005）
 
 1. WM_CHAR 路徑中，任一碼元 `PostMessage` 回傳 `false` 即中止該路徑（`allPosted = false`），落入 `SendUnicodeString`（SendInput）後備。
-2. 非 EDIT 類目標直接走 `SendUnicodeString`。
+2. 剪貼簿路徑中，`Clipboard.SetDataObject` 擲出例外（剪貼簿被其他程式鎖定等）時，落入 `SendUnicodeString`（SendInput）後備，並記錄除錯日誌。
 
 ### 7.4 SendInput 實作（`SendUnicodeString`）
 
@@ -231,8 +232,17 @@ WM_CHAR 直遞     SendInput（KEYEVENTF_UNICODE）
 
 1. 觸發條件：環境變數 `PUNCTINPUT_DEBUG` 值為 `1`；append 寫入 `%TEMP%\PunctInput_debug.log`，行首時間戳 `HH:mm:ss.fff`。日誌失敗以 `catch` 吞除，不影響主功能。
 2. WM_CHAR 路徑欄位：`route=WM_CHAR`、`text=U+XXXX`、`focus=0x{handle}`、`class={cls}`、`posted={allPosted}`。
-3. SendInput 路徑欄位：`route=SendInput`、`text=U+XXXX`、`focus`、`class`；`SendUnicodeString` 另記 `requested`、`injected`、`lastError`、`foreground=0x{handle}`。
-4. 略過送字時記：`SendSymbolToTarget skip: no usable foreground window`。
+3. SendInput 路徑欄位：`route=SendInput (console)` 或 `route=SendInput (WM_CHAR fallback)`；`SendUnicodeString` 另記 `requested`、`injected`、`lastError`、`foreground=0x{handle}`。
+4. 剪貼簿路徑欄位：`route=ClipboardPaste`、`text=U+XXXX`、`focus`、`class`；還原成功記 `clipboard restored`，設定或還原失敗記 `clipboard set failed: ...`／`clipboard restore failed: ...`。
+5. 略過送字時記：`SendSymbolToTarget skip: no usable foreground window`。
+
+### 7.6 剪貼簿中轉（DD-9，`SendViaClipboardPaste`）
+
+1. 快照：送字前以 `SnapshotClipboard()` 盡力複製使用者剪貼簿之全部格式（逐格式 `GetData`／`SetData`，個別格式失敗即跳過）；還原尚未執行（`_restorePending`）時不重拍快照，確保連續點擊期間保住原始內容。
+2. 置換與貼上：`Clipboard.SetDataObject(text, true)` 置入符號後，`SendCtrlV()` 送出 Ctrl + V；送出前對 Shift／Alt／Win 執行 `ReleaseModifierIfDown`（`GetAsyncKeyState` 檢測按住才送 KEYUP），避免組合成 Ctrl + Shift + V 等變體。
+3. 延遲還原：`System.Windows.Forms.Timer`（500 ms）到期執行 `RestoreClipboardBackup()`——有快照則 `SetDataObject(backup, true)` 還原，原剪貼簿為空則 `Clipboard.Clear()`。
+4. 程序結束（`OnFormClosing` 之結束分支）時若還原尚未執行，立即補執行還原，避免符號殘留於剪貼簿。
+5. 已知競態（R6）：目標應用忙碌、於 500 ms 後才處理佇列中的 Ctrl + V 時，會貼到還原後的內容；此為剪貼簿中轉法之固有限制（成熟片語工具同樣存在）。
 
 ## 八、 建置與環境
 
@@ -280,6 +290,8 @@ WM_CHAR 直遞     SendInput（KEYEVENTF_UNICODE）
 | 重複啟動（已有實例） | `Mutex` `createdNew=false`，彈出「標點符號輸入工具已在執行中，請以 Ctrl + Alt + / 呼叫。」提示後結束 | FR-011 |
 | 前景無可用視窗（Zero 或自身） | 記日誌後直接返回，不送字 | 7.1 |
 | WM_CHAR 投遞失敗 | 落入 SendInput 後備 | FR-005 |
+| 剪貼簿設定失敗（被鎖定等） | 落入 SendInput 後備，記除錯日誌 | FR-005、§7.3 |
+| 剪貼簿還原失敗 | 記除錯日誌，不影響送字結果 | §7.6 |
 | UIPI（目標以系統管理員權限執行） | WM_CHAR 與 SendInput 皆被阻擋，靜默失敗（除錯日誌可查 `lastError`） | R3 |
 | 除錯日誌寫入失敗 | `catch` 吞除，不影響主功能 | FR-013 |
 
@@ -288,8 +300,9 @@ WM_CHAR 直遞     SendInput（KEYEVENTF_UNICODE）
 - **R1（全域熱鍵衝突，v1.1 已緩解）**：全域熱鍵仍優先於應用程式內同鍵位快捷鍵；v1.1 依 DD-8 由 Ctrl + / 改為 Ctrl + Alt + /（老闆 2026-07-11 回饋原鍵位實務使用困難），主流應用（VS Code、Word、Chrome、Edge、Obsidian、LINE）無此預設綁定，衝突面實質歸零。
 - **R2（裸 Esc 攔截代價，老闆已採認）**：視窗顯示期間裸 Esc 被全域攔截，前景應用程式的 Esc（IME 組字取消、關閉選單等）會被吃掉一次並隱藏面板，面板隱藏後即恢復。對抗審查 3/3 確認之設計代價，已裁決保留（Boss_Prompt 明定 Esc 關閉、不搶焦點約束下無 `KeyPreview` 替代路徑）；老闆 2026-07-11 採認「R2 可接受」。
 - **R3（UIPI）**：無法輸入至以系統管理員權限執行的視窗（WM_CHAR 與 SendInput 皆被阻擋，靜默失敗，除錯日誌可查）。
-- **R4（TSF 相容性假設，已解除）**：SendInput 路徑對 TSF 應用（Chromium、Word）在 IME 開啟時的相容性原為「假設」；老闆 2026-07-11 實機驗證通過（V7 結案），後續異常時以 `PUNCTINPUT_DEBUG=1` 查路由。
-- **R5（非標準輸入管線）**：非標準輸入管線應用（遊戲 raw input 等）可能忽略兩種注入方式。
+- **R4（SendInput 之 IME 組字攔截，v1.3 已解除主要曝險）**：SendInput 之 VK_PACKET 對 CJK 字元在注音 IME 開啟時被攔入組字區（老闆 2026-07-11 實機回報「預編譯狀態」）；v1.3 起 SendInput 僅餘主控台路徑與後備路徑，主要目標改剪貼簿中轉（DD-9）。
+- **R5（非標準輸入管線）**：非標準輸入管線應用（遊戲 raw input 等）可能忽略注入方式。
+- **R6（剪貼簿中轉副作用，DD-9）**：送字時剪貼簿內容被替換約 0.5 秒後盡力還原（常見格式可還原、特殊 COM 格式可能遺失）；目標應用延遲處理貼上時有貼到還原後內容之競態（§7.6 第 5 點）。
 
 ## 十一、 驗證紀錄（2026-07-11 實測）
 
@@ -304,6 +317,7 @@ WM_CHAR 直遞     SendInput（KEYEVENTF_UNICODE）
 | V7 | 老闆實機驗證 | 2026-07-11 老闆回報通過：實際滑鼠點擊送字至常用應用程式之路由正確性（結案） |
 | V8 | v1.1 熱鍵改版實測 | `keybd_event` 注入 Ctrl + Alt + /：切換隱藏（PASS）、切換重現（PASS）；Esc 隱藏（PASS）（2026-07-11） |
 | V9 | v1.2 成組符號與雙鍵位實測 | 按鍵枚舉 7 鍵組成與文字全對（「」『』《》【】：●█）；`keybd_event` 主鍵盤 VK_OEM_2 與數字鍵盤 VK_DIVIDE 切換隱藏／重現皆 PASS；Esc 隱藏 PASS（2026-07-11） |
+| V10 | v1.3 剪貼簿路徑端對端實測 | WPF TextBox（HwndWrapper 類，非 EDIT）為目標：點擊 「」／：／● 三鍵，文字完整到達 `「」：●` 且為定稿字元（textPass=True）；剪貼簿於還原計時器後回復原始標記內容（clipPass=True）（2026-07-11） |
 
 ## 十二、 設計決策索引（DD-1 至 DD-7）
 
@@ -317,6 +331,7 @@ WM_CHAR 直遞     SendInput（KEYEVENTF_UNICODE）
 | DD-6 | `PostMessage` 明確綁定 `PostMessageW` | 自主設計 |
 | DD-7 | 命名比照 AssetM：資料夾 `Punctuation_Input_Tool`、文件與 exe 前綴 `PunctInput` | 自主設計 |
 | DD-8 | 呼叫快捷鍵改為 Ctrl + Alt + /（v1.1；原 Ctrl + / 因 R1 實務使用困難汰換，主流應用無預設綁定） | 老闆裁決（2026-07-11 回饋後委任選鍵） |
+| DD-9 | 非 EDIT／非主控台目標之送字改剪貼簿中轉自動貼上（v1.3；解決 CJK 字元被注音 IME 攔入組字區問題，候選 WM_CHAR 全面直遞與暫切英文佈局落選） | 老闆裁決（2026-07-11 三選項裁決選 1，前置條件 git 保存 v1.2 已確認） |
 
 ## 十三、 操作方式
 
@@ -326,4 +341,4 @@ WM_CHAR 直遞     SendInput（KEYEVENTF_UNICODE）
 
 ---
 
-*本文件為 PunctInput 實作與改動基準，與現行 `src\Program.cs`、`scripts\build.ps1`、`src\app.manifest` 逐一對應；後續異動須同步更新本文件相關章節與版本沿革註記。沿革：v1.0（2026-07-11）首版建立；v1.1（2026-07-11）呼叫快捷鍵依 DD-8 改為 Ctrl + Alt + /，V7 結案、R1 緩解、R2 老闆採認、新增 V8；v1.2（2026-07-11）括號成組一鍵成對輸入（7 鍵）、4 欄 2 列配置、快捷鍵新增數字鍵盤 VK_DIVIDE 鍵位、新增 V9。*
+*本文件為 PunctInput 實作與改動基準，與現行 `src\Program.cs`、`scripts\build.ps1`、`src\app.manifest` 逐一對應；後續異動須同步更新本文件相關章節與版本沿革註記。沿革：v1.0（2026-07-11）首版建立；v1.1（2026-07-11）呼叫快捷鍵依 DD-8 改為 Ctrl + Alt + /，V7 結案、R1 緩解、R2 老闆採認、新增 V8；v1.2（2026-07-11）括號成組一鍵成對輸入（7 鍵）、4 欄 2 列配置、快捷鍵新增數字鍵盤 VK_DIVIDE 鍵位、新增 V9；v1.3（2026-07-11）非 EDIT 目標送字依 DD-9 改剪貼簿中轉自動貼上（新增 §7.6、R6、V10，R4 改寫）。*
