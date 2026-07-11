@@ -1,8 +1,9 @@
 // =====================================================================
 // PunctInput：PC 用標點符號輸入工具
-// UI 比照 Windows 小算盤；點擊符號按鈕即依類別路由（DD-4）送字至前景
-// 應用程式的焦點控制項：類別名含 EDIT 者走 WM_CHAR（PostMessageW）直遞，
-// 其餘目標走 SendInput（KEYEVENTF_UNICODE），投遞失敗後備 SendInput。
+// UI 比照 Windows 小算盤；點擊符號按鈕即依類別三路路由（DD-4／DD-9）送字
+// 至前景應用程式的焦點控制項：類別名含 EDIT 者走 WM_CHAR（PostMessageW）
+// 直遞、主控台走 SendInput（KEYEVENTF_UNICODE）、其餘目標走剪貼簿中轉
+// 自動貼上；WM_CHAR 投遞失敗或剪貼簿設定失敗時後備 SendInput。
 // 工具視窗採 WS_EX_NOACTIVATE，點擊不搶焦點。
 // 快捷鍵：Ctrl + Alt + / 呼叫（顯示／隱藏切換；主鍵盤與數字鍵盤之 / 皆可）；
 // Esc 關閉視窗（隱藏至系統匣）。

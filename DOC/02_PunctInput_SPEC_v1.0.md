@@ -52,7 +52,7 @@ Punctuation_Input_Tool/
 ├── scripts/
 │   └── build.ps1              建置腳本（csc.exe 一鍵編譯，UTF-8 BOM）
 └── dist/
-    └── PunctInput.exe         建置產出（14,848 bytes，2026-07-11）
+    └── PunctInput.exe         master 建置產出（17,408 bytes，2026-07-11 v1.3）；Aphy 分支產出 PunctInput_Aphy.exe，dist 雙檔並存
 ```
 
 ### 3.1 `src\Program.cs` 內部結構
@@ -280,7 +280,7 @@ WM_CHAR 直遞          cls == "ConsoleWindowClass"？
 | .NET SDK | 無（本機僅 .NET Framework 4.8 runtime + 內建編譯器） |
 | AutoHotkey | 無 |
 | 建置指令 | `powershell -ExecutionPolicy Bypass -File scripts\build.ps1` |
-| 產出 | `dist\PunctInput.exe`（14,848 bytes，2026-07-11） |
+| 產出 | `dist\PunctInput.exe`（17,408 bytes，2026-07-11 v1.3）；Aphy 分支為 `dist\PunctInput_Aphy.exe`（17,920 bytes，v1.4），雙檔並存互不覆蓋 |
 
 ## 九、 錯誤處理與降級
 
