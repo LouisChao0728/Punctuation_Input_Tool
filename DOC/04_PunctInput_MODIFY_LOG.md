@@ -4,6 +4,23 @@
 
 ---
 
+## 安裝入口易用性註記（2026-07-11）——程式本體無異動，版號維持 v1.3
+
+### 觸發
+
+1. 老闆實測 log（Boss_Prompt [look rs]）：於 PowerShell 預設起始目錄 `C:\Windows\system32` 執行文件所載相對路徑指令 `powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1`，回報「-File 引數不存在」。根因：文件指令採相對路徑但未載明須先位於專案根目錄。
+
+### 變更
+
+1. 新增 `scripts\install.bat` 與 `scripts\uninstall.bat` 雙擊執行包裝：以 `%~dp0` 自我定位呼叫對應 `.ps1`，與開啟位置無關；純 ASCII 內容避免 cmd 代碼頁亂碼，結尾 `pause` 保留輸出。
+2. 文件修正：README 快速開始補 `cd` 前置與雙擊入口說明；SPEC §13、INDEX 檔案職責與環境速查同步。
+
+### 驗證
+
+1. 重現老闆情境實測：工作目錄切至 `%TEMP%`（非專案根）以絕對路徑執行 `install.bat`——偵測既有安裝 → 完整解除 → 重新部署 → 啟動，全流程 PASS（PASS 後本機為已安裝 master 版執行中）。
+
+---
+
 ## 安裝流程改版註記（2026-07-11）——程式本體無異動，版號維持 v1.3
 
 ### 觸發
