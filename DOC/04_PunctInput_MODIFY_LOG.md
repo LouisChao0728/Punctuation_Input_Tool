@@ -4,6 +4,23 @@
 
 ---
 
+## Illustrator 送字取證工具註記（2026-07-12，與 master `bc8f8bf` 同步）——程式本體無異動
+
+### 觸發
+
+1. Aphy 使用者回報：Illustrator 內無法正常輸出對應符號。git 考古已否定「某版本處理預編譯狀態時取消剪貼簿機制」假說：剪貼簿中轉自 v1.3（db7235e）引入後無任何 commit 移除或停用，master 與 Aphy 送字層位元組相同（區段 md5 一致）。失效點須遠端取證判別，候選失效模式：UIPI（R3）、合成 Ctrl + V 於 Illustrator 已知不穩、Ctrl + V 遭自訂改派、R6 還原窗競態、剪貼簿設定失敗後備退 SendInput（R4 路徑）。
+
+### 變更
+
+1. 自 master 取入 `scripts\Diagnose_Illustrator.bat`（純 ASCII、`%~dp0` 自我定位、結尾 `pause`，比照 install.bat 慣例）：STEP-1 機器資訊 → STEP-2 舊 debug log 保存後清除 → STEP-3 停止既有實例 → STEP-4 四序位定位 exe（同層 Aphy exe → `..\dist` → `%LOCALAPPDATA%` 安裝版 → 同層 PunctInput.exe）併記大小與 MD5 識別版本（master 17,408 / Aphy 17,920 bytes）→ STEP-5 探測 Illustrator 程序與提權（Handle 存取 heuristic 判 UIPI）、輸入法清單、全程序清單 → STEP-6 `PUNCTINPUT_DEBUG=1` 啟動 → STEP-7 引導重現（含記事本對照組）→ STEP-8 收割 debug log，全數寫入同層 `log.txt`。不安裝、不改系統設定。本分支即取證對象（於 Aphy 使用者機器執行）。
+2. INDEX 檔案職責表同步新增該檔一列。
+
+### 驗證
+
+1. 工具內容與 master `bc8f8bf` 完全相同（單一檔案取入，無分支在地化差異）。master 端已完成：本機全流程實跑 STEP-1 至 STEP-8 落 log PASS（exe 識別 17,920 bytes = Aphy v1.4.2、注音 TIP 探測到位、debug 模式啟動確認）；`timeout` 之 PATH／stdin 缺陷改 `ping` 絕對路徑延遲法（實測 2.02 秒）；自 `scripts\` 執行之四序位定位實測命中 `..\dist\PunctInput_Aphy.exe`（PASS）。
+
+---
+
 ## 安裝入口易用性註記（2026-07-11，與 master `0d96031` 同步）——程式本體無異動
 
 ### 觸發
