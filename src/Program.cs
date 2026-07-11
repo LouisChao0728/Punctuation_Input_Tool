@@ -489,6 +489,7 @@ namespace PunctInput
             if (!_restorePending)
             {
                 _clipboardBackup = SnapshotClipboard();
+                DebugLog("clipboard snapshot done backup=" + (_clipboardBackup != null ? "text" : "none"));
             }
             _restoreTimer.Stop();
             try
@@ -507,6 +508,7 @@ namespace PunctInput
             }
             _restorePending = true;
             SendCtrlV();
+            DebugLog("ctrl+v injected");
             _restoreTimer.Start();
         }
 
@@ -538,7 +540,17 @@ namespace PunctInput
             _clipboardBackup = null;
         }
 
-        // 盡力快照剪貼簿全部格式；個別格式取出失敗時跳過該格式
+        // 快照僅限文字類格式（DD-10，2026-07-12）：對非文字格式（繪圖軟體
+        // 物件等延遲渲染格式）執行 GetData 會同步等待剪貼簿擁有者現場渲染
+        // （單格式最長約 30 秒、多格式累積），UI 執行緒凍結、Ctrl + V 永遠
+        // 送不出去（Illustrator 2020 實機案例，焦點類別 DroverLord）。
+        // GetDataPresent 僅查詢格式存在、不觸發渲染；非文字格式放棄備份
+        // （R6：特殊格式盡力還原）。
+        private static readonly string[] SnapshotTextFormats = new string[]
+        {
+            DataFormats.UnicodeText, DataFormats.Text, DataFormats.Rtf, DataFormats.Html
+        };
+
         private static IDataObject SnapshotClipboard()
         {
             try
@@ -548,23 +560,27 @@ namespace PunctInput
                 {
                     return null;
                 }
-                string[] formats = src.GetFormats(false);
                 DataObject copy = new DataObject();
                 int copied = 0;
-                for (int i = 0; i < formats.Length; i++)
+                for (int i = 0; i < SnapshotTextFormats.Length; i++)
                 {
+                    string fmt = SnapshotTextFormats[i];
                     try
                     {
-                        object data = src.GetData(formats[i], false);
+                        if (!src.GetDataPresent(fmt, false))
+                        {
+                            continue;
+                        }
+                        object data = src.GetData(fmt, false);
                         if (data != null)
                         {
-                            copy.SetData(formats[i], false, data);
+                            copy.SetData(fmt, false, data);
                             copied++;
                         }
                     }
                     catch (Exception)
                     {
-                        // 該格式無法複製（COM 代理等），跳過
+                        // 該格式無法取出，跳過
                     }
                 }
                 return copied > 0 ? (IDataObject)copy : null;

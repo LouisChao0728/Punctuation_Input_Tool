@@ -1,6 +1,6 @@
 # PunctInput 專案規格書（SPEC）v1.0
 
-**文件版本**：v1.4.2（2026-07-11，Aphy 分支；master 對應 v1.3。檔名依 AssetM 慣例維持 v1.0，就地更新並於文末註記沿革）
+**文件版本**：v1.4.3（2026-07-12，Aphy 分支；master 對應 v1.3.1。檔名依 AssetM 慣例維持 v1.0，就地更新並於文末註記沿革）
 **定位**：本文件為實作與改動的唯一基準；規格與程式碼逐一對應，兩者不一致時以本文件與現行程式碼複核後修正。
 **對照文件**：`01_PunctInput_PRD.md`（產品定位與設計決策）、`03_PunctInput_SRS_v1.0.md`（FR / NFR 可測試需求與驗收條件）
 **實作對象**：`src\Program.cs`（單檔全部邏輯）、`src\app.manifest`、`scripts\build.ps1`、`dist\PunctInput_Aphy.exe`（Aphy 分支建置產出；master 為 `dist\PunctInput.exe`）
@@ -12,7 +12,7 @@
 1. 產品：標點符號輸入工具（PunctInput），Windows 桌面用之常駐小工具。UI 比照 Windows 10 小算盤：上方顯示區 + 下方按鍵格。
 2. 核心行為：點擊符號按鈕，即以送字策略（第七章）將該符號直接輸入至前景應用程式的焦點控制項（DD-2 送出行為）。工具視窗不搶焦點，點擊後前景應用程式仍保有輸入游標。
 3. 呼叫方式：全域快捷鍵 Ctrl + Alt + / 切換視窗顯示／隱藏（FR-001，v1.1 依 DD-8 改鍵；v1.2 起主鍵盤與數字鍵盤之 / 皆可）；程序常駐系統匣，關閉視窗僅隱藏，結束程序須由系統匣選單「結束」（DD-3、FR-010）。
-4. 版本：v1.4.2（Aphy 分支，`app.manifest` assemblyIdentity version `1.4.2.0`），日期 2026-07-11。
+4. 版本：v1.4.3（Aphy 分支，`app.manifest` assemblyIdentity version `1.4.3.0`），日期 2026-07-12。
 5. 來源與授權界線：老闆 Boss_Prompt 2026-07-11 指示建立，文件體系比照 `Asset_Management` 專案。`Claude_WorkSpace` 非 Global Rules 完全權限路徑，本專案異動依老闆當次指示執行，不主張全權開發授權。
 
 ## 二、 技術棧與依賴
@@ -52,7 +52,7 @@ Punctuation_Input_Tool/
 ├── scripts/
 │   └── build.ps1              建置腳本（csc.exe 一鍵編譯，UTF-8 BOM）
 └── dist/
-    └── PunctInput_Aphy.exe    Aphy 分支建置產出（17,920 bytes，2026-07-11）；master 分支產出 PunctInput.exe
+    └── PunctInput_Aphy.exe    Aphy 分支建置產出（18,432 bytes，2026-07-12 v1.4.3）；master 分支產出 PunctInput.exe
 ```
 
 ### 3.1 `src\Program.cs` 內部結構
@@ -69,7 +69,7 @@ Punctuation_Input_Tool/
 | `WndProc`(`WM_HOTKEY`) | 熱鍵訊息分派（FR-001、FR-002） |
 | `OnFormClosing` | 關閉鈕視同隱藏（FR-010） |
 | `SendSymbolToTarget` / `SendViaClipboardPaste` / `SendUnicodeString` | 送字策略三路路由與剪貼簿中轉（第七章） |
-| `SnapshotClipboard` / `RestoreClipboardBackup` / `OnRestoreTimerTick` | 剪貼簿快照與延遲還原（DD-9，§7.6） |
+| `SnapshotClipboard` / `RestoreClipboardBackup` / `OnRestoreTimerTick` | 剪貼簿快照（文字類白名單，DD-10）與延遲還原（DD-9，§7.6） |
 | `SendCtrlV` / `ReleaseModifierIfDown` | 貼上鍵送出與修飾鍵清理（§7.6） |
 | `DebugLog` | 除錯日誌（FR-013） |
 | P/Invoke 宣告與結構 | user32.dll 匯入、`GUITHREADINFO`／`INPUT`／`KEYBDINPUT` 等 |
@@ -241,12 +241,12 @@ WM_CHAR 直遞          cls == "ConsoleWindowClass"？
 1. 觸發條件：環境變數 `PUNCTINPUT_DEBUG` 值為 `1`；append 寫入 `%TEMP%\PunctInput_debug.log`，行首時間戳 `HH:mm:ss.fff`。日誌失敗以 `catch` 吞除，不影響主功能。
 2. WM_CHAR 路徑欄位：`route=WM_CHAR`、`text=U+XXXX`、`focus=0x{handle}`、`class={cls}`、`posted={allPosted}`。
 3. SendInput 路徑欄位：`route=SendInput (console)` 或 `route=SendInput (WM_CHAR fallback)`；`SendUnicodeString` 另記 `requested`、`injected`、`lastError`、`foreground=0x{handle}`。
-4. 剪貼簿路徑欄位：`route=ClipboardPaste`、`text=U+XXXX`、`focus`、`class`；還原成功記 `clipboard restored`，設定或還原失敗記 `clipboard set failed: ...`／`clipboard restore failed: ...`。
+4. 剪貼簿路徑欄位：`route=ClipboardPaste`、`text=U+XXXX`、`focus`、`class`；還原成功記 `clipboard restored`，設定或還原失敗記 `clipboard set failed: ...`／`clipboard restore failed: ...`。v1.4.3 起新增兩個中途觀測點（消除 route 行與還原行之間的不可觀測區間）：快照完成記 `clipboard snapshot done backup=text|none`、貼上鍵注入後記 `ctrl+v injected`。
 5. 略過送字時記：`SendSymbolToTarget skip: no usable foreground window`。
 
-### 7.6 剪貼簿中轉（DD-9，`SendViaClipboardPaste`）
+### 7.6 剪貼簿中轉（DD-9／DD-10，`SendViaClipboardPaste`）
 
-1. 快照：送字前以 `SnapshotClipboard()` 盡力複製使用者剪貼簿之全部格式（逐格式 `GetData`／`SetData`，個別格式失敗即跳過）；還原尚未執行（`_restorePending`）時不重拍快照，確保連續點擊期間保住原始內容。
+1. 快照（v1.4.3 依 DD-10 改文字類白名單）：送字前以 `SnapshotClipboard()` 備份使用者剪貼簿，僅限固定白名單 `SnapshotTextFormats`（`UnicodeText`／`Text`／`Rtf`／`Html`）——先以 `GetDataPresent`（僅查詢格式存在、不觸發渲染）確認存在，才 `GetData` 取值；非文字格式一律不備份。緣由：原快照對全部格式逐一 `GetData`，遇延遲渲染（delayed rendering）擁有者（Illustrator 2020，Aphy 使用者實機案例）會同步等待擁有者現場渲染（單格式最長約 30 秒、多格式累積），UI 執行緒凍結、Ctrl + V 永遠送不出去。還原尚未執行（`_restorePending`）時不重拍快照，確保連續點擊期間保住原始內容。
 2. 置換與貼上：`Clipboard.SetDataObject(text, true)` 置入符號後，`SendCtrlV()` 送出 Ctrl + V；送出前對 Shift／Alt／Win 執行 `ReleaseModifierIfDown`（`GetAsyncKeyState` 檢測按住才送 KEYUP），避免組合成 Ctrl + Shift + V 等變體。
 3. 延遲還原：`System.Windows.Forms.Timer`（500 ms）到期執行 `RestoreClipboardBackup()`——有快照則 `SetDataObject(backup, true)` 還原，原剪貼簿為空則 `Clipboard.Clear()`。
 4. 程序結束（`OnFormClosing` 之結束分支）時若還原尚未執行，立即補執行還原，避免符號殘留於剪貼簿。
@@ -288,7 +288,7 @@ WM_CHAR 直遞          cls == "ConsoleWindowClass"？
 | .NET SDK | 無（本機僅 .NET Framework 4.8 runtime + 內建編譯器） |
 | AutoHotkey | 無 |
 | 建置指令 | `powershell -ExecutionPolicy Bypass -File scripts\build.ps1` |
-| 產出 | `dist\PunctInput_Aphy.exe`（17,920 bytes，2026-07-11）；master 為 `dist\PunctInput.exe`（17,408 bytes，v1.3） |
+| 產出 | `dist\PunctInput_Aphy.exe`（18,432 bytes，2026-07-12 v1.4.3）；master 為 `dist\PunctInput.exe`（17,408 bytes，v1.3.1） |
 
 ## 九、 錯誤處理與降級
 
@@ -310,7 +310,7 @@ WM_CHAR 直遞          cls == "ConsoleWindowClass"？
 - **R3（UIPI）**：無法輸入至以系統管理員權限執行的視窗（WM_CHAR 與 SendInput 皆被阻擋，靜默失敗，除錯日誌可查）。
 - **R4（SendInput 之 IME 組字攔截，v1.3 已解除主要曝險）**：SendInput 之 VK_PACKET 對 CJK 字元在注音 IME 開啟時被攔入組字區（老闆 2026-07-11 實機回報「預編譯狀態」）；v1.3 起 SendInput 僅餘主控台路徑與後備路徑，主要目標改剪貼簿中轉（DD-9）。
 - **R5（非標準輸入管線）**：非標準輸入管線應用（遊戲 raw input 等）可能忽略注入方式。
-- **R6（剪貼簿中轉副作用，DD-9）**：送字時剪貼簿內容被替換約 0.5 秒後盡力還原（常見格式可還原、特殊 COM 格式可能遺失）；目標應用延遲處理貼上時有貼到還原後內容之競態（§7.6 第 5 點）。
+- **R6（剪貼簿中轉副作用，DD-9／DD-10）**：送字時剪貼簿內容被替換約 0.5 秒後盡力還原；v1.4.3 起僅備份文字類格式（DD-10 白名單），非文字格式（圖形、物件等）不還原——使用者原複製之非文字內容須重新複製；目標應用延遲處理貼上時有貼到還原後內容之競態（§7.6 第 5 點）。
 
 ## 十一、 驗證紀錄（2026-07-11 實測）
 
@@ -329,8 +329,9 @@ WM_CHAR 直遞          cls == "ConsoleWindowClass"？
 | V11 | v1.4（Aphy 分支）符號集擴充實測 | 按鍵枚舉 45 鍵，與預期碼位清單完全吻合（MISSING 無、EXTRA 無）；Ctrl + Alt + / 切換 PASS；視窗實測 334 × 841 px（96 DPI）（2026-07-11） |
 | V12 | v1.4.1（Aphy 分支）10 欄配置實測 | 按鍵枚舉 45 鍵碼位全對；視窗實測 802 × 407 px（96 DPI，10 欄 5 列）；Ctrl + Alt + / 切換隱藏／重現皆 PASS（2026-07-11） |
 | V13 | v1.4.2（Aphy 分支）列結構實測 | 45 鍵逐列座標比對：5 列組成（11／11／2／11／10）與各列鍵序全數 PASS；視窗實測 880 × 407 px（96 DPI）；切換隱藏／重現皆 PASS（2026-07-11） |
+| V14 | v1.4.3 快照白名單端對端實測（與 master v1.3.1 共用編號；送字層兩分支同一修正） | master 端三案：T1 文字剪貼簿正常還原（日誌完整鏈 route → `snapshot done backup=text` → `ctrl+v injected` → `clipboard restored`）、T2 HeavyOwner 延遲渲染擁有者不凍結、T3 舊版對照重現凍結簽名（因果閉環）；Aphy 建置複測 T2 案：快照 3 ms 內跳過（backup=none）、「」送達 WPF 非 EDIT 目標、還原正常、面板保持回應（PASS）（2026-07-12） |
 
-## 十二、 設計決策索引（DD-1 至 DD-7）
+## 十二、 設計決策索引（DD-1 至 DD-10）
 
 | 編號 | 決策 | 類別 |
 |------|------|------|
@@ -343,6 +344,7 @@ WM_CHAR 直遞          cls == "ConsoleWindowClass"？
 | DD-7 | 命名比照 AssetM：資料夾 `Punctuation_Input_Tool`、文件與 exe 前綴 `PunctInput` | 自主設計 |
 | DD-8 | 呼叫快捷鍵改為 Ctrl + Alt + /（v1.1；原 Ctrl + / 因 R1 實務使用困難汰換，主流應用無預設綁定） | 老闆裁決（2026-07-11 回饋後委任選鍵） |
 | DD-9 | 非 EDIT／非主控台目標之送字改剪貼簿中轉自動貼上（v1.3；解決 CJK 字元被注音 IME 攔入組字區問題，候選 WM_CHAR 全面直遞與暫切英文佈局落選） | 老闆裁決（2026-07-11 三選項裁決選 1，前置條件 git 保存 v1.2 已確認） |
+| DD-10 | 剪貼簿快照限縮為文字類格式白名單（v1.4.3，同 master v1.3.1；`UnicodeText`／`Text`／`Rtf`／`Html`，先 `GetDataPresent` 再 `GetData`，非文字格式不備份；解決延遲渲染擁有者致 UI 執行緒凍結問題，候選「背景執行緒＋逾時」「重量內容跳過快照」落選） | 老闆裁決（2026-07-12 三案選 A；Aphy 使用者 Illustrator 實機案例，凍結經使用者確認、本機 HeavyOwner 模擬重現） |
 
 ## 十三、 操作方式
 
@@ -354,4 +356,4 @@ WM_CHAR 直遞          cls == "ConsoleWindowClass"？
 
 ---
 
-*本文件為 PunctInput 實作與改動基準，與現行 `src\Program.cs`、`scripts\build.ps1`、`src\app.manifest` 逐一對應；後續異動須同步更新本文件相關章節與版本沿革註記。沿革：v1.0（2026-07-11）首版建立；v1.1（2026-07-11）呼叫快捷鍵依 DD-8 改為 Ctrl + Alt + /，V7 結案、R1 緩解、R2 老闆採認、新增 V8；v1.2（2026-07-11）括號成組一鍵成對輸入（7 鍵）、4 欄 2 列配置、快捷鍵新增數字鍵盤 VK_DIVIDE 鍵位、新增 V9；v1.3（2026-07-11）非 EDIT 目標送字依 DD-9 改剪貼簿中轉自動貼上（新增 §7.6、R6、V10，R4 改寫）；v1.4（2026-07-11，Aphy 分支）符號集擴為 45 鍵、按鍵格列數改動態推導、新增 V11；v1.4.1（2026-07-11，Aphy 分支）`GRID_COLS` 改 10（1 列 10 項）、安裝流程自 master cherry-pick 偵測既有安裝先解除、新增 V12；v1.4.2（2026-07-11，Aphy 分支）改列結構定義——1 列 11 項、✿ ❀ 移至 ⛤ 後、圈號與點號各自獨立列，新增 V13。*
+*本文件為 PunctInput 實作與改動基準，與現行 `src\Program.cs`、`scripts\build.ps1`、`src\app.manifest` 逐一對應；後續異動須同步更新本文件相關章節與版本沿革註記。沿革：v1.0（2026-07-11）首版建立；v1.1（2026-07-11）呼叫快捷鍵依 DD-8 改為 Ctrl + Alt + /，V7 結案、R1 緩解、R2 老闆採認、新增 V8；v1.2（2026-07-11）括號成組一鍵成對輸入（7 鍵）、4 欄 2 列配置、快捷鍵新增數字鍵盤 VK_DIVIDE 鍵位、新增 V9；v1.3（2026-07-11）非 EDIT 目標送字依 DD-9 改剪貼簿中轉自動貼上（新增 §7.6、R6、V10，R4 改寫）；v1.4（2026-07-11，Aphy 分支）符號集擴為 45 鍵、按鍵格列數改動態推導、新增 V11；v1.4.1（2026-07-11，Aphy 分支）`GRID_COLS` 改 10（1 列 10 項）、安裝流程自 master cherry-pick 偵測既有安裝先解除、新增 V12；v1.4.2（2026-07-11，Aphy 分支）改列結構定義——1 列 11 項、✿ ❀ 移至 ⛤ 後、圈號與點號各自獨立列，新增 V13；v1.4.3（2026-07-12，Aphy 分支，與 master v1.3.1 同步）剪貼簿快照依 DD-10 限縮文字類白名單並新增兩個除錯觀測點（§7.5、§7.6 第 1 點、R6 改寫，新增 DD-10、V14）。*
