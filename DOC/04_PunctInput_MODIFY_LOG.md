@@ -4,6 +4,45 @@
 
 ---
 
+## v1.3.1（2026-07-12）——剪貼簿快照限文字類白名單（Illustrator 凍結修正）
+
+### 觸發
+
+1. Aphy 使用者回報 Illustrator 內點擊符號無輸出。遠端取證（`Diagnose_Illustrator.bat` 兩輪）＋程式碼路徑分析定位根因：`SnapshotClipboard` 對剪貼簿全部格式逐一 `GetData`，遇延遲渲染（delayed rendering）擁有者（Illustrator 2020，焦點類別 `DroverLord - Window Class`）同步等待現場渲染（單格式最長約 30 秒、多格式累積），UI 執行緒凍結、Ctrl + V 從未送出。debug 簽名：兩輪各僅一行 `route=ClipboardPaste`、其後 114 秒無 set failed／restored 任何後續行且程序存活（獨立對抗驗證 CONFIRMED；Aphy 使用者證實點擊後面板凍結）。
+
+### 裁決
+
+1. DD-10：快照限縮為文字類格式白名單（老闆 2026-07-12 三案選 A；候選 B「背景執行緒＋逾時」、C「重量內容跳過快照」落選）。
+
+### 程式
+
+1. `src\Program.cs`：`SnapshotClipboard` 由「`GetFormats` 全格式逐一 `GetData`」改為固定白名單 `SnapshotTextFormats`（`UnicodeText`／`Text`／`Rtf`／`Html`），先 `GetDataPresent`（僅查詢存在、不觸發渲染）確認才 `GetData`；非文字格式不備份（R6 盡力還原語意不變）。
+2. 觀測點補強（對抗驗證指出之不可觀測區間回填）：`SendViaClipboardPaste` 新增兩行除錯日誌——快照完成 `clipboard snapshot done backup=text|none`、貼上鍵注入 `ctrl+v injected`。
+3. `src\app.manifest`：assemblyIdentity version 1.3.0.0 → 1.3.1.0。
+
+### 驗證（V14，三案端對端，2026-07-12）
+
+1. T1（新版＋文字剪貼簿 ORIGINAL_MARKER）：WPF 非 EDIT 目標（HwndWrapper 類）收到 「」；日誌完整鏈 route → `snapshot done backup=text` → `ctrl+v injected` → `clipboard restored`（+499 ms）；剪貼簿還原為原內容（PASS）。
+2. T2（新版＋HeavyOwner 模擬 Illustrator：兩個延遲渲染非文字格式、`WM_RENDERFORMAT` 沉睡 20 秒、其他訊息即時回應）：快照 3 ms 內跳過（backup=none）、「」正常送達、還原正常、面板保持回應（PASS）。
+3. T3（舊版 v1.3＋同一 HeavyOwner）：本機完整重現 Aphy 機器凍結簽名——僅 route 一行、面板無回應（SendMessageTimeout 逾時）、目標零輸出（根因因果閉環）。
+4. 建置：csc 0 錯誤，`dist\PunctInput.exe` 17,408 bytes。
+
+### 文件
+
+1. SPEC（版本、§3 結構表、§7.5 觀測點、§7.6 第 1 點改寫、§8.3、§9 產出、R6 改寫、V14、DD-10、沿革）、SRS（FR-004 與驗收、沿革）、PRD（DD-10、R6 改寫、版本）、INDEX（版本、行數 780、manifest 備考同步修正為實值、文件地圖）同步。
+
+### 版號
+
+1. v1.3.1；manifest assembly version 1.3.1.0。
+
+### 殘留事項
+
+1. 同根共候選（`SetDataObject` 之 `EmptyClipboard` 對完全無回應擁有者阻塞）在 T2「存活但渲染慢」模擬下未發作；若 Aphy 實機更新後仍凍結，依既定候選升級方案 B（背景執行緒＋逾時）。
+2. Aphy 使用者機器之實機複測（更新後直接使用，或 `PUNCTINPUT_DEBUG=1` 重跑取證 bat）待新版交付後執行。
+3. 本機安裝版仍為 v1.3（老闆裁決後以 `install.bat` 更新至 v1.3.1）。
+
+---
+
 ## Illustrator 送字取證工具註記（2026-07-12）——程式本體無異動，版號維持 v1.3
 
 ### 觸發
