@@ -35,6 +35,11 @@
 2. 變更：Aphy 分支之 `build.ps1` 輸出改為 `dist\PunctInput_Aphy.exe`（master 分支維持 `dist\PunctInput.exe`，兩分支建置互不覆蓋）；`install.ps1` 來源同步改名，並註記安裝目的地與 Mutex 與 master 共用、安裝 Aphy 版會取代既有安裝。
 3. `dist\` 於 `.gitignore` 排除，雙檔僅存於本機工作目錄。
 
+### 發布（2026-07-11 老闆指示）
+
+1. GitHub Release「PunctInput v1.4（Aphy 版）」：tag `v1.4-Aphy` 指向 Aphy 分支，附 `PunctInput_Aphy.exe`（17,920 bytes，assembly 1.4.0.0）為 release asset；以 `--latest=false` 發布，repo「Latest」徽章維持 master 之 v1.3（老闆本機預設 master 版）。
+2. 附帶修正：本分支 `Program.cs` 檔頭註解補 DD-9 三路路由敘述（分支點早於 master 之同項修正 `79fa4e8`，故需各自修正）。
+
 ---
 
 ## 安裝工具與 GitHub 發布註記（2026-07-11）——程式本體無異動，版號維持 v1.3
