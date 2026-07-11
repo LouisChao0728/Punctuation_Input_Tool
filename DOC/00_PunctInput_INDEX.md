@@ -44,6 +44,8 @@
 | `src\Program.cs` | C# WinForms 單檔全部邏輯：視窗建置、DPI 縮放、全域熱鍵、符號送出三路路由（DD-4／DD-9，含剪貼簿快照與還原）、系統匣、除錯日誌（FR-013） | 741 行（2026-07-11 v1.3 實查）；語言層級 C# 5（NFR-05） |
 | `src\app.manifest` | DPI 感知宣告（`dpiAware=true`，NFR-03）+ Common Controls v6 相依宣告 | assembly version 1.0.0.0 |
 | `scripts\build.ps1` | 建置腳本：呼叫 `csc.exe` 編譯 `Program.cs`，產出 `dist\PunctInput.exe` | UTF-8 BOM；乾淨檢出時自動建立 `dist\`（NFR-02） |
+| `scripts\install.ps1` | 安裝腳本（FR-014）：部署 exe 至 `%LOCALAPPDATA%\Programs\PunctInput\`、建立開始功能表與開機自啟捷徑、啟動 | UTF-8 BOM；`-NoStartup` 略過自啟、`-NoLaunch` 不啟動；dist 缺檔時自動先建置 |
+| `scripts\uninstall.ps1` | 解除安裝腳本（FR-014）：停止程序、移除捷徑與安裝目錄 | UTF-8 BOM；不動原始碼與 `dist\` |
 | `dist\PunctInput.exe` | 建置產出（可執行檔） | 17,408 bytes（2026-07-11 v1.3 實查值） |
 | `DOC\` | 本專案文件目錄 | 詳見第四節 |
 | `CLAUDE.md` | 專案規則（比照 AssetM 慣例）：Rule 1 文件基準、Rule 2 異動紀錄、Rule 3 權限、Rule 4 檢核清單、Rule 5 送字路由義務、Rule 6 建置環境 | 已建立（2026-07-11） |
@@ -65,6 +67,9 @@
 | 編譯器 | `C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe` |
 | Runtime | Windows 內建 .NET Framework 4.x（NFR-01，免安裝） |
 | 建置指令 | `powershell -ExecutionPolicy Bypass -File scripts\build.ps1` |
+| 安裝指令 | `powershell -ExecutionPolicy Bypass -File scripts\install.ps1`（FR-014，選項 `-NoStartup` / `-NoLaunch`） |
+| 解除安裝指令 | `powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1` |
+| 安裝位置 | `%LOCALAPPDATA%\Programs\PunctInput\PunctInput.exe`；捷徑於開始功能表與 Startup 資料夾 |
 | 建置參數 | `/nologo /codepage:65001 /target:winexe /platform:anycpu /optimize+ /win32manifest:"src\app.manifest" /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /out:"dist\PunctInput.exe"`（NFR-02，全參數見 `scripts\build.ps1`） |
 | 除錯環境變數 | `PUNCTINPUT_DEBUG=1`（啟用時 append 寫入 `%TEMP%\PunctInput_debug.log`，FR-013） |
 | 單一實例識別 | Mutex 名稱 `PunctInput_SingleInstance_Mutex`（FR-011） |

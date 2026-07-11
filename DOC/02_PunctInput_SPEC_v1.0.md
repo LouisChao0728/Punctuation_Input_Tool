@@ -335,9 +335,11 @@ WM_CHAR 直遞          cls == "ConsoleWindowClass"？
 
 ## 十三、 操作方式
 
-1. 啟動：執行 `dist\PunctInput.exe`（顯示視窗與系統匣圖示）。
-2. 呼叫：Ctrl + Alt + / 顯示／隱藏（主鍵盤與數字鍵盤之 / 皆可）；Esc 或視窗關閉鈕隱藏；系統匣右鍵「結束」退出程序。
-3. 重建：`powershell -ExecutionPolicy Bypass -File scripts\build.ps1`。
+1. 安裝（FR-014，建議方式）：`powershell -ExecutionPolicy Bypass -File scripts\install.ps1`——部署 exe 至 `%LOCALAPPDATA%\Programs\PunctInput\`、建立開始功能表捷徑與開機自啟捷徑（Startup 資料夾）並啟動；`-NoStartup` 略過自啟捷徑（既有者一併移除）、`-NoLaunch` 安裝後不啟動；`dist\PunctInput.exe` 缺檔時自動先執行 `build.ps1`。
+2. 解除安裝：`powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1`——停止程序、移除兩處捷徑與安裝目錄，不動原始碼與 `dist\`。
+3. 免安裝直接執行：`dist\PunctInput.exe`（顯示視窗與系統匣圖示）。
+4. 呼叫：Ctrl + Alt + / 顯示／隱藏（主鍵盤與數字鍵盤之 / 皆可）；Esc 或視窗關閉鈕隱藏；系統匣右鍵「結束」退出程序。
+5. 重建：`powershell -ExecutionPolicy Bypass -File scripts\build.ps1`。
 
 ---
 

@@ -4,6 +4,31 @@
 
 ---
 
+## 安裝工具與 GitHub 發布註記（2026-07-11）——程式本體無異動，版號維持 v1.3
+
+### 觸發
+
+1. 老闆指示：create install tool；完成之後 push to github。
+
+### 變更
+
+1. 新增 `scripts\install.ps1`（FR-014）：部署 exe 至 `%LOCALAPPDATA%\Programs\PunctInput\`、建立開始功能表捷徑與開機自啟捷徑（Startup 資料夾）並啟動；選項 `-NoStartup`（略過自啟）、`-NoLaunch`（不啟動）；`dist\` 缺檔時自動先建置。UTF-8 BOM。
+2. 新增 `scripts\uninstall.ps1`（FR-014）：停止程序、移除兩處捷徑與安裝目錄；不動原始碼與 `dist\`。UTF-8 BOM。
+3. 界線註記：PRD 5.2 原將「開機自啟」列為範圍外（v1.0 當時事實清單未列）；本次老闆指示安裝工具，開機自啟為其核心價值，隨 FR-014 納入（以 `-NoStartup` 保留退出口）。
+4. GitHub 發布：以 gh CLI（帳號 LouisChao0728）建立 repo 並推送完整 commit 歷史；細節見本節「發布」。
+
+### 驗證
+
+1. 實跑 `install.ps1`：部署 17,408 bytes、兩捷徑建立且目標均指向安裝位置、程序自安裝位置啟動（PASS）。
+2. 實跑 `uninstall.ps1`：安裝目錄與兩捷徑全數移除，Test-Path 驗證皆 False（PASS）。
+3. 重跑 `install.ps1`：重裝成功，最終狀態為已安裝並執行中（PASS）。
+
+### 發布
+
+1. Repo：`LouisChao0728/Punctuation_Input_Tool`（private）；推送分支 master，含 v1.0 至 v1.3 全部 commit 歷史。
+
+---
+
 ## v1.3（2026-07-11）——剪貼簿中轉繞過輸入法組字區
 
 ### 觸發
