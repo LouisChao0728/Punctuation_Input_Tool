@@ -4,7 +4,8 @@
 // 應用程式的焦點控制項：類別名含 EDIT 者走 WM_CHAR（PostMessageW）直遞，
 // 其餘目標走 SendInput（KEYEVENTF_UNICODE），投遞失敗後備 SendInput。
 // 工具視窗採 WS_EX_NOACTIVATE，點擊不搶焦點。
-// 快捷鍵：Ctrl + Alt + / 呼叫（顯示／隱藏切換）；Esc 關閉視窗（隱藏至系統匣）。
+// 快捷鍵：Ctrl + Alt + / 呼叫（顯示／隱藏切換；主鍵盤與數字鍵盤之 / 皆可）；
+// Esc 關閉視窗（隱藏至系統匣）。
 // 建置：Windows 內建 .NET Framework csc.exe，語言層級 C# 5。
 // 規格基準：DOC\02_PunctInput_SPEC_v1.0.md（送字策略見第七章）。
 // =====================================================================
@@ -55,11 +56,13 @@ namespace PunctInput
         private const uint MOD_ALT = 0x0001;
         private const uint MOD_CONTROL = 0x0002;
         private const uint MOD_NOREPEAT = 0x4000;
-        private const uint VK_OEM_2 = 0xBF;      // 「/ ?」鍵
+        private const uint VK_OEM_2 = 0xBF;      // 主鍵盤「/ ?」鍵
+        private const uint VK_DIVIDE = 0x6F;     // 數字鍵盤「/」鍵
         private const uint VK_ESCAPE = 0x1B;
 
-        private const int HOTKEY_ID_TOGGLE = 1;  // Ctrl + Alt + /：顯示／隱藏切換
-        private const int HOTKEY_ID_ESC = 2;     // Esc：僅於視窗顯示期間註冊
+        private const int HOTKEY_ID_TOGGLE = 1;      // Ctrl + Alt + /（主鍵盤）：顯示／隱藏切換
+        private const int HOTKEY_ID_ESC = 2;         // Esc：僅於視窗顯示期間註冊
+        private const int HOTKEY_ID_TOGGLE_NUM = 3;  // Ctrl + Alt + /（數字鍵盤）：同切換
 
         private const int WS_EX_TOPMOST = 0x00000008;
         private const int WS_EX_NOACTIVATE = 0x08000000;
@@ -68,12 +71,11 @@ namespace PunctInput
         private const uint KEYEVENTF_KEYUP = 0x0002;
         private const uint KEYEVENTF_UNICODE = 0x0004;
 
-        // ---- 符號清單（Boss_Prompt 指定順序）----
-        // 「 」 『 』 《 》 【 】 ： ● █
+        // ---- 符號清單（Boss_Prompt 指定順序；v1.2 起括號成組一鍵成對輸入）----
+        // 「」 『』 《》 【】 ： ● █（4 組括號 + 3 個單符號，共 7 鍵）
         private static readonly string[] Symbols = new string[]
         {
-            "「", "」", "『", "』",
-            "《", "》", "【", "】",
+            "「」", "『』", "《》", "【】",
             "：", "●", "█"
         };
 
@@ -81,6 +83,7 @@ namespace PunctInput
         private Label _display;
         private bool _exiting;
         private bool _toggleHotkeyOk;
+        private bool _toggleNumHotkeyOk;
         private bool _escHotkeyRegistered;
 
         public PunctPadForm()
@@ -96,7 +99,7 @@ namespace PunctInput
             StartPosition = FormStartPosition.CenterScreen;
             BackColor = Color.FromArgb(230, 230, 230);
             Font = new Font("Segoe UI", 9F);
-            ClientSize = new Size(Scale(3 * 78 + 16, scale), Scale(48 + 4 * 62 + 20, scale));
+            ClientSize = new Size(Scale(4 * 78 + 16, scale), Scale(48 + 2 * 62 + 20, scale));
 
             BuildDisplay(scale);
             BuildButtonGrid(scale);
@@ -120,7 +123,7 @@ namespace PunctInput
 
         private void BuildButtonGrid(float scale)
         {
-            int cols = 3;
+            int cols = 4;
             int btnW = Scale(74, scale);
             int btnH = Scale(56, scale);
             int gap = Scale(4, scale);
@@ -208,10 +211,24 @@ namespace PunctInput
         {
             base.OnHandleCreated(e);
             _toggleHotkeyOk = RegisterHotKey(Handle, HOTKEY_ID_TOGGLE, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_OEM_2);
-            if (!_toggleHotkeyOk)
+            _toggleNumHotkeyOk = RegisterHotKey(Handle, HOTKEY_ID_TOGGLE_NUM, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_DIVIDE);
+            if (!_toggleHotkeyOk || !_toggleNumHotkeyOk)
             {
+                string failedKeys;
+                if (!_toggleHotkeyOk && !_toggleNumHotkeyOk)
+                {
+                    failedKeys = "主鍵盤與數字鍵盤";
+                }
+                else if (!_toggleHotkeyOk)
+                {
+                    failedKeys = "主鍵盤";
+                }
+                else
+                {
+                    failedKeys = "數字鍵盤";
+                }
                 MessageBox.Show(
-                    "全域快捷鍵 Ctrl + Alt + / 註冊失敗（被其他程式佔用）。仍可由系統匣圖示操作。",
+                    "全域快捷鍵 Ctrl + Alt + /（" + failedKeys + " / 鍵）註冊失敗（被其他程式佔用）。仍可由系統匣圖示操作。",
                     AppTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
@@ -224,6 +241,11 @@ namespace PunctInput
             {
                 UnregisterHotKey(Handle, HOTKEY_ID_TOGGLE);
                 _toggleHotkeyOk = false;
+            }
+            if (_toggleNumHotkeyOk)
+            {
+                UnregisterHotKey(Handle, HOTKEY_ID_TOGGLE_NUM);
+                _toggleNumHotkeyOk = false;
             }
             UnregisterEscHotkey();
             base.OnHandleDestroyed(e);
@@ -269,7 +291,7 @@ namespace PunctInput
             if (m.Msg == WM_HOTKEY)
             {
                 int id = m.WParam.ToInt32();
-                if (id == HOTKEY_ID_TOGGLE)
+                if (id == HOTKEY_ID_TOGGLE || id == HOTKEY_ID_TOGGLE_NUM)
                 {
                     TogglePad();
                     return;

@@ -1,6 +1,6 @@
 # PunctInput 專案規格書（SPEC）v1.0
 
-**文件版本**：v1.1（2026-07-11；檔名依 AssetM 慣例維持 v1.0，就地更新並於文末註記沿革）
+**文件版本**：v1.2（2026-07-11；檔名依 AssetM 慣例維持 v1.0，就地更新並於文末註記沿革）
 **定位**：本文件為實作與改動的唯一基準；規格與程式碼逐一對應，兩者不一致時以本文件與現行程式碼複核後修正。
 **對照文件**：`01_PunctInput_PRD.md`（產品定位與設計決策）、`03_PunctInput_SRS_v1.0.md`（FR / NFR 可測試需求與驗收條件）
 **實作對象**：`src\Program.cs`（單檔全部邏輯）、`src\app.manifest`、`scripts\build.ps1`、`dist\PunctInput.exe`
@@ -11,8 +11,8 @@
 
 1. 產品：標點符號輸入工具（PunctInput），Windows 桌面用之常駐小工具。UI 比照 Windows 10 小算盤：上方顯示區 + 下方按鍵格。
 2. 核心行為：點擊符號按鈕，即以送字策略（第七章）將該符號直接輸入至前景應用程式的焦點控制項（DD-2 送出行為）。工具視窗不搶焦點，點擊後前景應用程式仍保有輸入游標。
-3. 呼叫方式：全域快捷鍵 Ctrl + Alt + / 切換視窗顯示／隱藏（FR-001，v1.1 依 DD-8 改鍵）；程序常駐系統匣，關閉視窗僅隱藏，結束程序須由系統匣選單「結束」（DD-3、FR-010）。
-4. 版本：v1.1（`app.manifest` assemblyIdentity version `1.1.0.0`），日期 2026-07-11。
+3. 呼叫方式：全域快捷鍵 Ctrl + Alt + / 切換視窗顯示／隱藏（FR-001，v1.1 依 DD-8 改鍵；v1.2 起主鍵盤與數字鍵盤之 / 皆可）；程序常駐系統匣，關閉視窗僅隱藏，結束程序須由系統匣選單「結束」（DD-3、FR-010）。
+4. 版本：v1.2（`app.manifest` assemblyIdentity version `1.2.0.0`），日期 2026-07-11。
 5. 來源與授權界線：老闆 Boss_Prompt 2026-07-11 指示建立，文件體系比照 `Asset_Management` 專案。`Claude_WorkSpace` 非 Global Rules 完全權限路徑，本專案異動依老闆當次指示執行，不主張全權開發授權。
 
 ## 二、 技術棧與依賴
@@ -62,7 +62,7 @@ Punctuation_Input_Tool/
 | `Program.Main`（`[STAThread]`） | 單一實例 `Mutex`（名稱 `PunctInput_SingleInstance_Mutex`，FR-011）、`EnableVisualStyles`、`Application.Run(new PunctPadForm())` |
 | `PunctPadForm` 建構式 | DPI 縮放取得、視窗屬性設定、`BuildDisplay` / `BuildButtonGrid` / `BuildTrayIcon` |
 | `BuildDisplay` | 上方顯示區 `Label`（FR-008） |
-| `BuildButtonGrid` | 3×4 符號按鍵格（FR-003） |
+| `BuildButtonGrid` | 4×2 符號按鍵格（FR-003，v1.2 起 7 鍵） |
 | `BuildTrayIcon` | 系統匣 `NotifyIcon` 與右鍵選單（FR-009） |
 | `CreateParams` / `ShowWithoutActivation` / `WndProc`(`WM_MOUSEACTIVATE`) | 不搶焦點機制（FR-006） |
 | `OnHandleCreated` / `OnHandleDestroyed` / `OnVisibleChanged` | 熱鍵生命週期（第六章） |
@@ -86,7 +86,7 @@ Punctuation_Input_Tool/
 | `StartPosition` | `CenterScreen` | 置中 |
 | `BackColor` | RGB(230,230,230) | 小算盤風底色（NFR-04） |
 | `Font` | Segoe UI 9pt | 全域字型（NFR-04） |
-| `ClientSize` | 寬 `Scale(3*78+16)`＝250、高 `Scale(48+4*62+20)`＝316（縮放前，96 DPI） | 版面計算 |
+| `ClientSize` | 寬 `Scale(4*78+16)`＝328、高 `Scale(48+2*62+20)`＝192（縮放前，96 DPI；v1.2 改 4 欄 2 列） | 版面計算 |
 
 ### 4.2 顯示區（FR-008）
 
@@ -98,9 +98,9 @@ Punctuation_Input_Tool/
 
 ### 4.3 按鍵格（FR-003）
 
-1. 佈局：3 欄 × 4 列（11 個按鈕，末列 2 個）。
+1. 佈局：4 欄 × 2 列（7 個按鍵，末列 3 個；v1.2 依老闆指示改 1 列 4 項）。
 2. 尺寸（縮放前）：按鈕寬 74、高 56、間距 4；起點 left 8、top 52。
-3. 座標公式：`left + (i % 3) * (74 + 4)`、`top + (i / 3) * (56 + 4)`（i 為符號索引）。
+3. 座標公式：`left + (i % 4) * (74 + 4)`、`top + (i / 4) * (56 + 4)`（i 為按鍵索引）。
 4. 樣式：`FlatStyle.Flat`；背景 RGB(250,250,250)、前景 RGB(32,32,32)、字型 Segoe UI 16pt。
 5. 框線與互動色：`BorderColor` RGB(230,230,230)、`BorderSize` 1；`MouseOverBackColor` RGB(218,218,218)、`MouseDownBackColor` RGB(200,200,200)。
 6. `TabStop = false`：按鈕不進入 Tab 焦點鏈（配合不搶焦點）。
@@ -126,33 +126,27 @@ Punctuation_Input_Tool/
 
 ### 5.1 符號集與順序
 
-1. 符號來源：Boss_Prompt 指定順序，共 11 個，硬編於 `Symbols` 字串陣列，禁止改序。
-2. 送出內容即字串本身（單一 UTF-16 碼元，皆位於 BMP）。
+1. 符號來源：Boss_Prompt 指定，共 11 個符號；v1.2 起依老闆指示，4 組括號成組為單鍵（點一下成對輸入兩字元），與 3 個單符號合計 7 鍵，硬編於 `Symbols` 字串陣列，禁止改序。
+2. 送出內容即字串本身（每鍵 1 至 2 個 UTF-16 碼元，皆位於 BMP；成組鍵依序逐碼元送出，游標停於配對符號之後）。
 
-| 序 | 索引 i | 符號 | 碼位 | 名稱 |
-|----|-------|------|------|------|
-| 1 | 0 | 「 | U+300C | 左角括號 |
-| 2 | 1 | 」 | U+300D | 右角括號 |
-| 3 | 2 | 『 | U+300E | 左白角括號 |
-| 4 | 3 | 』 | U+300F | 右白角括號 |
-| 5 | 4 | 《 | U+300A | 左書名號 |
-| 6 | 5 | 》 | U+300B | 右書名號 |
-| 7 | 6 | 【 | U+3010 | 左黑透鏡括號 |
-| 8 | 7 | 】 | U+3011 | 右黑透鏡括號 |
-| 9 | 8 | ： | U+FF1A | 全形冒號 |
-| 10 | 9 | ● | U+25CF | 實心圓 |
-| 11 | 10 | █ | U+2588 | 整格方塊 |
+| 鍵序 | 索引 i | 按鍵 | 送出內容（碼位） | 名稱 |
+|------|-------|------|------------------|------|
+| 1 | 0 | 「」 | U+300C U+300D | 角括號組 |
+| 2 | 1 | 『』 | U+300E U+300F | 白角括號組 |
+| 3 | 2 | 《》 | U+300A U+300B | 書名號組 |
+| 4 | 3 | 【】 | U+3010 U+3011 | 黑透鏡括號組 |
+| 5 | 4 | ： | U+FF1A | 全形冒號 |
+| 6 | 5 | ● | U+25CF | 實心圓 |
+| 7 | 6 | █ | U+2588 | 整格方塊 |
 
-### 5.2 按鈕配置對照（3 欄 × 4 列）
+### 5.2 按鈕配置對照（4 欄 × 2 列）
 
-| 列＼欄 | 第 0 欄 | 第 1 欄 | 第 2 欄 |
-|--------|--------|--------|--------|
-| 第 0 列 | 「（i=0） | 」（i=1） | 『（i=2） |
-| 第 1 列 | 』（i=3） | 《（i=4） | 》（i=5） |
-| 第 2 列 | 【（i=6） | 】（i=7） | ：（i=8） |
-| 第 3 列 | ●（i=9） | █（i=10） | （空） |
+| 列＼欄 | 第 0 欄 | 第 1 欄 | 第 2 欄 | 第 3 欄 |
+|--------|--------|--------|--------|--------|
+| 第 0 列 | 「」（i=0） | 『』（i=1） | 《》（i=2） | 【】（i=3） |
+| 第 1 列 | ：（i=4） | ●（i=5） | █（i=6） | （空） |
 
-（配置由 `i % 3`（欄）與 `i / 3`（列）決定；第 3 列第 2 欄無按鈕。）
+（配置由 `i % 4`（欄）與 `i / 4`（列）決定；第 1 列第 3 欄無按鈕。）
 
 ## 六、 熱鍵規格
 
@@ -160,12 +154,13 @@ Punctuation_Input_Tool/
 
 | 熱鍵 | ID 常數 | 修飾鍵 | 虛擬鍵 | 功能 | FR |
 |------|--------|--------|--------|------|----|
-| Ctrl + Alt + / | `HOTKEY_ID_TOGGLE`＝1 | `MOD_CONTROL`(0x0002) \| `MOD_ALT`(0x0001) \| `MOD_NOREPEAT`(0x4000) | `VK_OEM_2`(0xBF) | 顯示／隱藏切換（v1.1 依 DD-8 改鍵） | FR-001 |
+| Ctrl + Alt + /（主鍵盤） | `HOTKEY_ID_TOGGLE`＝1 | `MOD_CONTROL`(0x0002) \| `MOD_ALT`(0x0001) \| `MOD_NOREPEAT`(0x4000) | `VK_OEM_2`(0xBF) | 顯示／隱藏切換（v1.1 依 DD-8 改鍵） | FR-001 |
 | Esc | `HOTKEY_ID_ESC`＝2 | `MOD_NOREPEAT`(0x4000) | `VK_ESCAPE`(0x1B) | 隱藏視窗 | FR-002 |
+| Ctrl + Alt + /（數字鍵盤） | `HOTKEY_ID_TOGGLE_NUM`＝3 | `MOD_CONTROL`(0x0002) \| `MOD_ALT`(0x0001) \| `MOD_NOREPEAT`(0x4000) | `VK_DIVIDE`(0x6F) | 顯示／隱藏切換（v1.2 新增，與主鍵盤等價） | FR-001 |
 
 ### 6.2 生命週期
 
-1. Ctrl + Alt + / 於 `OnHandleCreated` 註冊、`OnHandleDestroyed` 反註冊（整個程序存活期間有效）。
+1. Ctrl + Alt + / 兩個鍵位（主鍵盤 ID＝1、數字鍵盤 ID＝3）於 `OnHandleCreated` 註冊、`OnHandleDestroyed` 反註冊（整個程序存活期間有效）；任一鍵位註冊失敗時，警告訊息列出失敗鍵位（主鍵盤／數字鍵盤）。
 2. Esc 為裸熱鍵（無修飾鍵），採 DD-5 副作用最小化：僅於視窗顯示期間註冊。
    - `OnVisibleChanged`：`Visible` 為真時 `RegisterEscHotkey()`；為假時 `UnregisterEscHotkey()`。
    - `RegisterEscHotkey` / `UnregisterEscHotkey` 以 `_escHotkeyRegistered` 布林旗標防重複註冊／反註冊。
@@ -174,7 +169,7 @@ Punctuation_Input_Tool/
 ### 6.3 WndProc 訊息處理
 
 1. `WM_HOTKEY`(0x0312)：讀 `WParam` 為熱鍵 ID。
-   - ID＝1（`HOTKEY_ID_TOGGLE`）→ `TogglePad()`。
+   - ID＝1（`HOTKEY_ID_TOGGLE`）或 ID＝3（`HOTKEY_ID_TOGGLE_NUM`）→ `TogglePad()`。
    - ID＝2（`HOTKEY_ID_ESC`）→ `HidePad()`。
 2. `WM_MOUSEACTIVATE`(0x0021)：回傳 `MA_NOACTIVATE`(3)，配合不搶焦點（FR-006）。
 3. 其餘訊息交回 `base.WndProc`。
@@ -281,7 +276,7 @@ WM_CHAR 直遞     SendInput（KEYEVENTF_UNICODE）
 
 | 情境 | 行為 | 對應 |
 |------|------|------|
-| Ctrl + Alt + / 註冊失敗（被佔用） | `OnHandleCreated` 顯示警告訊息框，程序續行，仍可由系統匣操作 | FR-012 |
+| Ctrl + Alt + / 註冊失敗（被佔用） | `OnHandleCreated` 顯示警告訊息框並列出失敗鍵位（主鍵盤／數字鍵盤／兩者），程序續行，仍可由系統匣操作 | FR-012 |
 | 重複啟動（已有實例） | `Mutex` `createdNew=false`，彈出「標點符號輸入工具已在執行中，請以 Ctrl + Alt + / 呼叫。」提示後結束 | FR-011 |
 | 前景無可用視窗（Zero 或自身） | 記日誌後直接返回，不送字 | 7.1 |
 | WM_CHAR 投遞失敗 | 落入 SendInput 後備 | FR-005 |
@@ -308,6 +303,7 @@ WM_CHAR 直遞     SendInput（KEYEVENTF_UNICODE）
 | V6 | 對抗審查 | 3 視角（interop／spec／robust）Opus 審查共 16 項發現，3 人反駁表決確認 5 項（已修正或裁決文件化）、否決 11 項 |
 | V7 | 老闆實機驗證 | 2026-07-11 老闆回報通過：實際滑鼠點擊送字至常用應用程式之路由正確性（結案） |
 | V8 | v1.1 熱鍵改版實測 | `keybd_event` 注入 Ctrl + Alt + /：切換隱藏（PASS）、切換重現（PASS）；Esc 隱藏（PASS）（2026-07-11） |
+| V9 | v1.2 成組符號與雙鍵位實測 | 按鍵枚舉 7 鍵組成與文字全對（「」『』《》【】：●█）；`keybd_event` 主鍵盤 VK_OEM_2 與數字鍵盤 VK_DIVIDE 切換隱藏／重現皆 PASS；Esc 隱藏 PASS（2026-07-11） |
 
 ## 十二、 設計決策索引（DD-1 至 DD-7）
 
@@ -325,9 +321,9 @@ WM_CHAR 直遞     SendInput（KEYEVENTF_UNICODE）
 ## 十三、 操作方式
 
 1. 啟動：執行 `dist\PunctInput.exe`（顯示視窗與系統匣圖示）。
-2. 呼叫：Ctrl + Alt + / 顯示／隱藏；Esc 或視窗關閉鈕隱藏；系統匣右鍵「結束」退出程序。
+2. 呼叫：Ctrl + Alt + / 顯示／隱藏（主鍵盤與數字鍵盤之 / 皆可）；Esc 或視窗關閉鈕隱藏；系統匣右鍵「結束」退出程序。
 3. 重建：`powershell -ExecutionPolicy Bypass -File scripts\build.ps1`。
 
 ---
 
-*本文件為 PunctInput 實作與改動基準，與現行 `src\Program.cs`、`scripts\build.ps1`、`src\app.manifest` 逐一對應；後續異動須同步更新本文件相關章節與版本沿革註記。沿革：v1.0（2026-07-11）首版建立；v1.1（2026-07-11）呼叫快捷鍵依 DD-8 改為 Ctrl + Alt + /，V7 結案、R1 緩解、R2 老闆採認、新增 V8。*
+*本文件為 PunctInput 實作與改動基準，與現行 `src\Program.cs`、`scripts\build.ps1`、`src\app.manifest` 逐一對應；後續異動須同步更新本文件相關章節與版本沿革註記。沿革：v1.0（2026-07-11）首版建立；v1.1（2026-07-11）呼叫快捷鍵依 DD-8 改為 Ctrl + Alt + /，V7 結案、R1 緩解、R2 老闆採認、新增 V8；v1.2（2026-07-11）括號成組一鍵成對輸入（7 鍵）、4 欄 2 列配置、快捷鍵新增數字鍵盤 VK_DIVIDE 鍵位、新增 V9。*
