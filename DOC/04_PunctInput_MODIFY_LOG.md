@@ -4,6 +4,29 @@
 
 ---
 
+## v1.4.1（2026-07-11，Aphy 分支）——1 列 10 項
+
+### 觸發
+
+1. 老闆 Boss_Prompt（[look rs]）指示：Aphy 版改成 1 個 row 有 10 個 item（同輪另項「安裝前先解除舊版」見下方 cherry-pick 註記區塊）。
+
+### 程式
+
+1. `src\Program.cs`：`GRID_COLS` 4 → 10（45 鍵 = 10 欄 5 列，末列 5 鍵：⒏ ⒐ ⒑ ✿ ❀）；列數與視窗尺寸沿用符號數推導，無其他邏輯異動。
+2. `src\app.manifest`：assemblyIdentity version 1.4.0.0 → 1.4.1.0。
+
+### 驗證
+
+1. V12：按鍵枚舉 45 鍵碼位全對（MISSING 無、EXTRA 無）；視窗實測 802 × 407 px（96 DPI，10 欄 5 列，較 v1.4 之 334 × 841 更合螢幕比例，v1.4 之 125% 縮放高度疑慮解除）；Ctrl + Alt + / 切換隱藏／重現皆 PASS。
+2. 建置：csc 0 錯誤，`dist\PunctInput_Aphy.exe` 17,920 bytes；測後以新版接續執行。
+3. 處置紀錄：本輪建置時發現老闆正試用中的 v1.4 實例（`PunctInput_Aphy`，19:32 啟動）持有檔案鎖與 Mutex，且稍早測試腳本誤啟之 master 安裝版卡在單一實例對話框；兩者清理後重建，以 v1.4.1 接續老闆試用狀態。
+
+### 版號
+
+1. Aphy 分支 v1.4.1；manifest assembly version 1.4.1.0。
+
+---
+
 ## 安裝流程改版註記（2026-07-11，自 master `2d422c2` cherry-pick）——程式本體無異動
 
 ### 觸發

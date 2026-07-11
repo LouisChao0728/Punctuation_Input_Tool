@@ -1,6 +1,6 @@
 # PunctInput 專案規格書（SPEC）v1.0
 
-**文件版本**：v1.4（2026-07-11，Aphy 分支；master 對應 v1.3。檔名依 AssetM 慣例維持 v1.0，就地更新並於文末註記沿革）
+**文件版本**：v1.4.1（2026-07-11，Aphy 分支；master 對應 v1.3。檔名依 AssetM 慣例維持 v1.0，就地更新並於文末註記沿革）
 **定位**：本文件為實作與改動的唯一基準；規格與程式碼逐一對應，兩者不一致時以本文件與現行程式碼複核後修正。
 **對照文件**：`01_PunctInput_PRD.md`（產品定位與設計決策）、`03_PunctInput_SRS_v1.0.md`（FR / NFR 可測試需求與驗收條件）
 **實作對象**：`src\Program.cs`（單檔全部邏輯）、`src\app.manifest`、`scripts\build.ps1`、`dist\PunctInput_Aphy.exe`（Aphy 分支建置產出；master 為 `dist\PunctInput.exe`）
@@ -12,7 +12,7 @@
 1. 產品：標點符號輸入工具（PunctInput），Windows 桌面用之常駐小工具。UI 比照 Windows 10 小算盤：上方顯示區 + 下方按鍵格。
 2. 核心行為：點擊符號按鈕，即以送字策略（第七章）將該符號直接輸入至前景應用程式的焦點控制項（DD-2 送出行為）。工具視窗不搶焦點，點擊後前景應用程式仍保有輸入游標。
 3. 呼叫方式：全域快捷鍵 Ctrl + Alt + / 切換視窗顯示／隱藏（FR-001，v1.1 依 DD-8 改鍵；v1.2 起主鍵盤與數字鍵盤之 / 皆可）；程序常駐系統匣，關閉視窗僅隱藏，結束程序須由系統匣選單「結束」（DD-3、FR-010）。
-4. 版本：v1.4（Aphy 分支，`app.manifest` assemblyIdentity version `1.4.0.0`），日期 2026-07-11。
+4. 版本：v1.4.1（Aphy 分支，`app.manifest` assemblyIdentity version `1.4.1.0`），日期 2026-07-11。
 5. 來源與授權界線：老闆 Boss_Prompt 2026-07-11 指示建立，文件體系比照 `Asset_Management` 專案。`Claude_WorkSpace` 非 Global Rules 完全權限路徑，本專案異動依老闆當次指示執行，不主張全權開發授權。
 
 ## 二、 技術棧與依賴
@@ -88,7 +88,7 @@ Punctuation_Input_Tool/
 | `StartPosition` | `CenterScreen` | 置中 |
 | `BackColor` | RGB(230,230,230) | 小算盤風底色（NFR-04） |
 | `Font` | Segoe UI 9pt | 全域字型（NFR-04） |
-| `ClientSize` | 寬 `Scale(GRID_COLS*78+16)`＝328、高 `Scale(48+gridRows*62+20)`；列數 `gridRows` 由符號數推導（v1.4 起動態計算；45 鍵 = 12 列，高 812，實測含框 841 px） | 版面計算 |
+| `ClientSize` | 寬 `Scale(GRID_COLS*78+16)`＝796、高 `Scale(48+gridRows*62+20)`；列數 `gridRows` 由符號數推導（v1.4 起動態計算；v1.4.1 起 `GRID_COLS`＝10，45 鍵 = 5 列，高 378，實測含框 802 × 407 px） | 版面計算 |
 
 ### 4.2 顯示區（FR-008）
 
@@ -100,7 +100,7 @@ Punctuation_Input_Tool/
 
 ### 4.3 按鍵格（FR-003）
 
-1. 佈局：`GRID_COLS`＝4 欄（v1.2 老闆裁決「1 列 4 項」），列數由符號數推導；Aphy 分支 45 鍵 = 12 列（末列 1 鍵），master 7 鍵 = 2 列。
+1. 佈局：`GRID_COLS`＝10 欄（v1.4.1 老闆裁決「1 列 10 項」；master 維持 v1.2 裁決之 4 欄），列數由符號數推導；Aphy 分支 45 鍵 = 5 列（末列 5 鍵）。
 2. 尺寸（縮放前）：按鈕寬 74、高 56、間距 4；起點 left 8、top 52。
 3. 座標公式：`left + (i % GRID_COLS) * (74 + 4)`、`top + (i / GRID_COLS) * (56 + 4)`（i 為按鍵索引）。
 4. 樣式：`FlatStyle.Flat`；背景 RGB(250,250,250)、前景 RGB(32,32,32)、字型 Segoe UI 16pt。
@@ -157,8 +157,8 @@ Aphy 分支擴充 38 鍵（鍵序 8 至 45）：
 
 ### 5.2 按鈕配置
 
-1. 配置由 `i % GRID_COLS`（欄）與 `i / GRID_COLS`（列）決定，`GRID_COLS`＝4，依鍵序（索引 i＝鍵序−1）由左至右、由上至下排列。
-2. Aphy 分支 45 鍵 = 12 列，末列僅第 0 欄（❀）；master 7 鍵 = 2 列，末列 3 鍵。
+1. 配置由 `i % GRID_COLS`（欄）與 `i / GRID_COLS`（列）決定，`GRID_COLS`＝10（v1.4.1；master 為 4），依鍵序（索引 i＝鍵序−1）由左至右、由上至下排列。
+2. Aphy 分支 45 鍵 = 5 列，末列 5 鍵（⒏ ⒐ ⒑ ✿ ❀）。
 
 ## 六、 熱鍵規格
 
@@ -329,6 +329,7 @@ WM_CHAR 直遞          cls == "ConsoleWindowClass"？
 | V9 | v1.2 成組符號與雙鍵位實測 | 按鍵枚舉 7 鍵組成與文字全對（「」『』《》【】：●█）；`keybd_event` 主鍵盤 VK_OEM_2 與數字鍵盤 VK_DIVIDE 切換隱藏／重現皆 PASS；Esc 隱藏 PASS（2026-07-11） |
 | V10 | v1.3 剪貼簿路徑端對端實測 | WPF TextBox（HwndWrapper 類，非 EDIT）為目標：點擊 「」／：／● 三鍵，文字完整到達 `「」：●` 且為定稿字元（textPass=True）；剪貼簿於還原計時器後回復原始標記內容（clipPass=True）（2026-07-11） |
 | V11 | v1.4（Aphy 分支）符號集擴充實測 | 按鍵枚舉 45 鍵，與預期碼位清單完全吻合（MISSING 無、EXTRA 無）；Ctrl + Alt + / 切換 PASS；視窗實測 334 × 841 px（96 DPI）（2026-07-11） |
+| V12 | v1.4.1（Aphy 分支）10 欄配置實測 | 按鍵枚舉 45 鍵碼位全對；視窗實測 802 × 407 px（96 DPI，10 欄 5 列）；Ctrl + Alt + / 切換隱藏／重現皆 PASS（2026-07-11） |
 
 ## 十二、 設計決策索引（DD-1 至 DD-7）
 
@@ -354,4 +355,4 @@ WM_CHAR 直遞          cls == "ConsoleWindowClass"？
 
 ---
 
-*本文件為 PunctInput 實作與改動基準，與現行 `src\Program.cs`、`scripts\build.ps1`、`src\app.manifest` 逐一對應；後續異動須同步更新本文件相關章節與版本沿革註記。沿革：v1.0（2026-07-11）首版建立；v1.1（2026-07-11）呼叫快捷鍵依 DD-8 改為 Ctrl + Alt + /，V7 結案、R1 緩解、R2 老闆採認、新增 V8；v1.2（2026-07-11）括號成組一鍵成對輸入（7 鍵）、4 欄 2 列配置、快捷鍵新增數字鍵盤 VK_DIVIDE 鍵位、新增 V9；v1.3（2026-07-11）非 EDIT 目標送字依 DD-9 改剪貼簿中轉自動貼上（新增 §7.6、R6、V10，R4 改寫）；v1.4（2026-07-11，Aphy 分支）符號集擴為 45 鍵、按鍵格列數改動態推導、新增 V11。*
+*本文件為 PunctInput 實作與改動基準，與現行 `src\Program.cs`、`scripts\build.ps1`、`src\app.manifest` 逐一對應；後續異動須同步更新本文件相關章節與版本沿革註記。沿革：v1.0（2026-07-11）首版建立；v1.1（2026-07-11）呼叫快捷鍵依 DD-8 改為 Ctrl + Alt + /，V7 結案、R1 緩解、R2 老闆採認、新增 V8；v1.2（2026-07-11）括號成組一鍵成對輸入（7 鍵）、4 欄 2 列配置、快捷鍵新增數字鍵盤 VK_DIVIDE 鍵位、新增 V9；v1.3（2026-07-11）非 EDIT 目標送字依 DD-9 改剪貼簿中轉自動貼上（新增 §7.6、R6、V10，R4 改寫）；v1.4（2026-07-11，Aphy 分支）符號集擴為 45 鍵、按鍵格列數改動態推導、新增 V11；v1.4.1（2026-07-11，Aphy 分支）`GRID_COLS` 改 10（1 列 10 項）、安裝流程自 master cherry-pick 偵測既有安裝先解除、新增 V12。*

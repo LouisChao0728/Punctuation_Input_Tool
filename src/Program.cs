@@ -97,8 +97,9 @@ namespace PunctInput
             "✿", "❀"
         };
 
-        // 按鍵格欄數（老闆 v1.2 裁決：1 列 4 項）；列數由符號數推導
-        private const int GRID_COLS = 4;
+        // 按鍵格欄數（Aphy 版 v1.4.1 老闆裁決：1 列 10 項；master 維持 4）；
+        // 列數由符號數推導
+        private const int GRID_COLS = 10;
 
         private NotifyIcon _trayIcon;
         private Label _display;
