@@ -79,12 +79,25 @@ namespace PunctInput
         private const ushort VK_V = 0x56;
 
         // ---- 符號清單（Boss_Prompt 指定順序；v1.2 起括號成組一鍵成對輸入）----
-        // 「」 『』 《》 【】 ： ● █（4 組括號 + 3 個單符號，共 7 鍵）
+        // 基礎 7 鍵：「」 『』 《》 【】 ： ● █
+        // Aphy 分支擴充（2026-07-11 Boss_Prompt「new item」區塊，依列出順序附加）：
+        //   成對 2 鍵：〔〕（U+3014 U+3015）、﹝﹞（U+FE5D U+FE5E）
+        //   單一 36 鍵：箭頭與愛心、勾選、圈號 ⓪ 至 ⑩、點號 ⒈ 至 ⒑、花卉
+        //   （清單第 5 項之 Facebook 表情圖檔實體為 ♥ U+2665）
         private static readonly string[] Symbols = new string[]
         {
             "「」", "『』", "《》", "【】",
-            "：", "●", "█"
+            "：", "●", "█",
+            "〔〕", "﹝﹞",
+            "←", "→", "➤", "❥", "♥", "♡", "►", "◄",
+            "⇒", "✔", "✓", "☑", "⛤",
+            "⓪", "①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩",
+            "⒈", "⒉", "⒊", "⒋", "⒌", "⒍", "⒎", "⒏", "⒐", "⒑",
+            "✿", "❀"
         };
+
+        // 按鍵格欄數（老闆 v1.2 裁決：1 列 4 項）；列數由符號數推導
+        private const int GRID_COLS = 4;
 
         private NotifyIcon _trayIcon;
         private Label _display;
@@ -111,7 +124,10 @@ namespace PunctInput
             StartPosition = FormStartPosition.CenterScreen;
             BackColor = Color.FromArgb(230, 230, 230);
             Font = new Font("Segoe UI", 9F);
-            ClientSize = new Size(Scale(4 * 78 + 16, scale), Scale(48 + 2 * 62 + 20, scale));
+            int gridRows = (Symbols.Length + GRID_COLS - 1) / GRID_COLS;
+            ClientSize = new Size(
+                Scale(GRID_COLS * 78 + 16, scale),
+                Scale(48 + gridRows * 62 + 20, scale));
 
             BuildDisplay(scale);
             BuildButtonGrid(scale);
@@ -139,7 +155,7 @@ namespace PunctInput
 
         private void BuildButtonGrid(float scale)
         {
-            int cols = 4;
+            int cols = GRID_COLS;
             int btnW = Scale(74, scale);
             int btnH = Scale(56, scale);
             int gap = Scale(4, scale);

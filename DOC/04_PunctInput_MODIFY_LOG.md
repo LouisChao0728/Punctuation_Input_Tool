@@ -4,6 +4,33 @@
 
 ---
 
+## v1.4（2026-07-11，Aphy 分支）——符號集擴充
+
+> 本區塊僅存在於 `Aphy` 分支；master 維持 v1.3。
+
+### 觸發
+
+1. 老闆 Boss_Prompt（[look rs]）指示：開新分支「Aphy」，新增「new item」區塊符號——成對 2 組（〔〕 U+3014 U+3015、﹝﹞ U+FE5D U+FE5E）、單一 36 個（含箭頭、愛心、勾選、圈號 ⓪ 至 ⑩、點號 ⒈ 至 ⒑、花卉；清單第 5 項之 Facebook 表情圖檔實體為 ♥ U+2665，圖檔 URL 內含碼位 2665 佐證）。
+
+### 程式
+
+1. `src\Program.cs`：`Symbols` 陣列由 7 鍵擴為 45 鍵（基礎 7 鍵保持原位，新符號依 Boss_Prompt 列出順序附加：先成對 2 鍵、後單一 36 鍵）；新增 `GRID_COLS` 常數（維持 v1.2「1 列 4 項」裁決），按鍵格列數與視窗高度改由符號數推導（45 鍵 = 4 欄 12 列，末列 1 鍵）。
+2. `src\app.manifest`：assemblyIdentity version 1.3.0.0 → 1.4.0.0（Aphy 分支版號線）。
+3. 送字層無異動：全部新符號皆為 BMP 單碼元（成對鍵 2 碼元），沿用既有三路路由。
+
+### 驗證
+
+1. 按鍵枚舉：45 鍵組成與預期碼位清單完全吻合（MISSING 無、EXTRA 無）；Ctrl + Alt + / 切換 PASS。
+2. 視窗尺寸實測 334 × 841 px（96 DPI）。註記：於 125% 顯示縮放約 1,051 px 高，接近 1080p 工作區極限；若過高，後續可裁決改多欄或縮小鍵高。
+3. 建置：csc 0 錯誤，`dist\PunctInput.exe` 17,920 bytes；測試後已恢復老闆已安裝之 master v1.3 執行。
+4. 觀察：exe 之 FileVersionInfo 顯示 0.0.0.0（manifest 版號不落入 Win32 版本資源；master 亦同），如需檔案總管可見版號，後續可於原始碼補 assembly 屬性。
+
+### 版號
+
+1. Aphy 分支 v1.4；manifest assembly version 1.4.0.0。
+
+---
+
 ## 安裝工具與 GitHub 發布註記（2026-07-11）——程式本體無異動，版號維持 v1.3
 
 ### 觸發
