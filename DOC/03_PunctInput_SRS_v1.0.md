@@ -23,7 +23,7 @@
 | FR-011 | 單一實例（Mutex：PunctInput_SingleInstance_Mutex），重複啟動彈出提示 | P1 | §3.1、§9 | 於已啟動狀態下重複執行 `dist\PunctInput.exe`，驗證彈出「標點符號輸入工具已在執行中，請以 Ctrl + Alt + / 呼叫。」提示且不建立第二視窗 |
 | FR-012 | Ctrl + Alt + / 任一鍵位註冊失敗時顯示警告訊息並列出失敗鍵位（主鍵盤／數字鍵盤／兩者），仍可由系統匣操作 | P2 | §9 | 模擬任一 / 鍵位已被其他程式佔用之情境下啟動本工具，驗證警告視窗訊息含「全域快捷鍵 Ctrl + Alt + /（{失敗鍵位} / 鍵）註冊失敗（被其他程式佔用）。仍可由系統匣圖示操作。」且系統匣圖示與選單操作仍正常 |
 | FR-013 | 除錯日誌：環境變數 PUNCTINPUT_DEBUG=1 時 append 寫入 %TEMP%\PunctInput_debug.log（記錄送字路由、類別、注入結果、前景 handle）；日誌失敗不影響主功能 | P1 | §7.5 | 設定 `PUNCTINPUT_DEBUG=1` 後操作，驗證 `%TEMP%\PunctInput_debug.log` 產生對應紀錄行（含路由、類別名、前景 handle）；未設定該環境變數時不產生日誌 |
-| FR-014 | 安裝／解除安裝腳本（2026-07-11 老闆指示新增）：`install.ps1` 部署 exe 至 `%LOCALAPPDATA%\Programs\PunctInput\`、建立開始功能表與開機自啟捷徑並啟動（`-NoStartup`／`-NoLaunch` 選項）；`uninstall.ps1` 停止程序、移除捷徑與安裝目錄 | P1 | §13 | 實跑 `install.ps1`：安裝目錄與兩捷徑存在、捷徑目標指向安裝位置、程序自安裝位置啟動；實跑 `uninstall.ps1`：三者全數移除（2026-07-11 已實測安裝、移除、重裝全程 PASS） |
+| FR-014 | 安裝／解除安裝腳本（2026-07-11 老闆指示新增）：`install.ps1` 先偵測既有安裝並執行 `uninstall.ps1` 完整解除舊版（2026-07-11 老闆指示，master 與分支共同規則），再部署 exe 至 `%LOCALAPPDATA%\Programs\PunctInput\`、建立開始功能表與開機自啟捷徑並啟動（`-NoStartup`／`-NoLaunch` 選項）；`uninstall.ps1` 停止程序、移除捷徑與安裝目錄 | P1 | §13 | 實跑 `install.ps1`（既有安裝存在）：輸出含「偵測到既有安裝，先執行解除安裝」且三項舊件全移除後重新部署、程序自安裝位置啟動（2026-07-11 實測 PASS）；實跑 `uninstall.ps1`：三者全數移除（2026-07-11 實測 PASS） |
 
 ## 二、 非功能需求（NFR）
 
