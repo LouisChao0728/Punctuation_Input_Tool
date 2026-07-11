@@ -1,0 +1,75 @@
+# PunctInput 專案索引（INDEX）
+
+**用途**：專案結構之單一入口索引，供人與 AI 助理快速定位檔案職責、快捷鍵操作與文件。
+**體例依據**：文件體系比照 Asset_Management（AssetM）專案慣例（老闆 2026-07-11 指示）。
+**對應版本**：v1.0（2026-07-11，首版建立）
+
+---
+
+## 一、 專案概觀
+
+| 項目 | 內容 |
+|------|------|
+| 產品 | 標點符號輸入工具（英文識別 PunctInput）：PC 端全域標點符號快速輸入面板 |
+| 專案根 | `C:\Users\user\Claude_WorkSpace\Punctuation_Input_Tool` |
+| 技術棧 | C# WinForms + Windows 內建 `csc.exe`（DD-1，候選 Python 3.11 + tkinter、Electron 落選） |
+| 送出行為 | 點擊符號直接輸入至前景應用程式（DD-2，候選「複製到剪貼簿」「兩者並行」落選） |
+| 常駐機制 | 系統匣常駐（NotifyIcon）；Esc 與視窗關閉鈕僅隱藏視窗，程序結束僅由系統匣選單「結束」（DD-3） |
+| 版本 | v1.0（manifest assembly version 1.0.0.0），2026-07-11 |
+| 來源 | 老闆 Boss_Prompt 2026-07-11 指示建立；文件體系比照 Asset_Management 專案 |
+| 權限範圍 | `Claude_WorkSpace` 非 Global Rules 完全權限路徑，本專案異動依老闆指示執行，不適用全權開發授權 |
+
+## 二、 快捷鍵與操作對照
+
+| 操作 | 觸發方式 | 行為 | 對應需求編號 |
+|------|---------|------|--------------|
+| Ctrl + / | 全域熱鍵（MOD_CONTROL + VK_OEM_2 + MOD_NOREPEAT） | 視窗顯示／隱藏切換 | FR-001 |
+| Esc | 全域熱鍵，僅於視窗顯示期間註冊 | 隱藏視窗 | FR-002 |
+| 點擊符號按鈕（11 個） | 滑鼠點擊 | 送往前景執行緒焦點控制項，依 DD-4 類別路由送出（WM_CHAR 或 SendInput，失敗後備 SendInput） | FR-003、FR-004、FR-005 |
+| 視窗關閉鈕 | 滑鼠點擊 | 視同隱藏（FormClosing 取消 + Hide），不結束程序 | FR-010 |
+| 系統匣圖示雙擊 | 滑鼠雙擊 | 顯示／隱藏切換 | FR-009 |
+| 系統匣右鍵選單「顯示／隱藏（Ctrl + /）」 | 滑鼠右鍵 | 顯示／隱藏切換 | FR-009 |
+| 系統匣右鍵選單「結束」 | 滑鼠右鍵 | 結束程序（唯一結束路徑） | FR-009、FR-010 |
+
+11 個符號按鈕依序（3 欄 4 列，FR-003）：
+
+| 順序 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+|------|---|---|---|---|---|---|---|---|---|----|----|
+| 符號 | 「 | 」 | 『 | 』 | 《 | 》 | 【 | 】 | ： | ● | █ |
+
+## 三、 檔案職責
+
+| 路徑 | 職責 | 備考 |
+|------|------|------|
+| `src\Program.cs` | C# WinForms 單檔全部邏輯：視窗建置、DPI 縮放、全域熱鍵、符號送出路由（DD-4）、系統匣、除錯日誌（FR-013） | 570 行；語言層級 C# 5（NFR-05） |
+| `src\app.manifest` | DPI 感知宣告（`dpiAware=true`，NFR-03）+ Common Controls v6 相依宣告 | assembly version 1.0.0.0 |
+| `scripts\build.ps1` | 建置腳本：呼叫 `csc.exe` 編譯 `Program.cs`，產出 `dist\PunctInput.exe` | UTF-8 BOM；乾淨檢出時自動建立 `dist\`（NFR-02） |
+| `dist\PunctInput.exe` | 建置產出（可執行檔） | 14,848 bytes（2026-07-11 實查值） |
+| `DOC\` | 本專案文件目錄 | 詳見第四節 |
+| `CLAUDE.md` | 專案規則（比照 AssetM 慣例）：Rule 1 文件基準、Rule 2 異動紀錄、Rule 3 權限、Rule 4 檢核清單、Rule 5 送字路由義務、Rule 6 建置環境 | 已建立（2026-07-11） |
+
+## 四、 DOC 文件地圖
+
+| 文件 | 用途 | 版本 |
+|------|------|------|
+| `00_PunctInput_INDEX.md` | 本檔，專案索引 | v1.0（2026-07-11） |
+| `01_PunctInput_PRD.md` | 產品需求文件（含設計決策紀錄 DD-1 至 DD-7、風險 R1 至 R5） | v1.0（2026-07-11） |
+| `02_PunctInput_SPEC_v1.0.md` | 專案規格書（實作基準） | v1.0（2026-07-11） |
+| `03_PunctInput_SRS_v1.0.md` | 軟體需求規格書（FR-001 至 FR-013、NFR-01 至 NFR-05） | v1.0（2026-07-11） |
+| `04_PunctInput_MODIFY_LOG.md` | 異動摘要紀錄（最新版在上） | v1.0（2026-07-11） |
+
+## 五、 環境速查
+
+| 項目 | 值 |
+|------|-----|
+| 編譯器 | `C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe` |
+| Runtime | Windows 內建 .NET Framework 4.x（NFR-01，免安裝） |
+| 建置指令 | `powershell -ExecutionPolicy Bypass -File scripts\build.ps1` |
+| 建置參數 | `/nologo /codepage:65001 /target:winexe /platform:anycpu /optimize+ /win32manifest:"src\app.manifest" /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /out:"dist\PunctInput.exe"`（NFR-02，全參數見 `scripts\build.ps1`） |
+| 除錯環境變數 | `PUNCTINPUT_DEBUG=1`（啟用時 append 寫入 `%TEMP%\PunctInput_debug.log`，FR-013） |
+| 單一實例識別 | Mutex 名稱 `PunctInput_SingleInstance_Mutex`（FR-011） |
+| 建置產出 | `dist\PunctInput.exe`（14,848 bytes，2026-07-11 實查值） |
+
+---
+
+*本檔為專案索引；內容與實際結構不符時，以程式碼與最新版 SPEC 為準並回頭修正本檔。*

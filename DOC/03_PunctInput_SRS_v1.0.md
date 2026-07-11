@@ -1,0 +1,52 @@
+# PunctInput 軟體需求規格書（SRS）v1.0
+
+**文件版本**：v1.0（2026-07-11）
+**對照文件**：`01_PunctInput_PRD.md`（第三章「目標與成功判準」為本文件第三章追蹤矩陣之來源）；`02_PunctInput_SPEC_v1.0.md`（實作基準，FR 表「SPEC 對照」欄逐條對應；內容不一致時以 SPEC 最新版為準）。
+**優先度定義**：P0 = v1.0 必要（缺此項工具核心運作或老闆明訂約束不成立）；P1 = v1.0 應有（強化可靠度或使用體驗，缺此項工具仍可運作）；P2 = 可延後（邊界情境提示，非日常操作路徑）。
+
+---
+
+## 一、 功能需求（FR）
+
+| 編號 | 需求 | 優先度 | SPEC 對照 | 驗收條件 |
+|------|------|--------|-----------|---------|
+| FR-001 | 全域快捷鍵 Ctrl + /（MOD_CONTROL + VK_OEM_2 + MOD_NOREPEAT）切換視窗顯示／隱藏 | P0 | §6.1、§6.3 | 對應事實清單 V5（keybd_event 注入組合鍵，視窗實測重現，PASS）；另需人工複測顯示中再次按下 Ctrl + / 觸發隱藏（`TogglePad`） |
+| FR-002 | Esc 於視窗顯示期間全域隱藏視窗（顯示期間才註冊裸 Esc 熱鍵） | P0 | §6.1、§6.2 | 對應事實清單 V4（keybd_event 注入 Esc，視窗實測隱藏，PASS） |
+| FR-003 | 11 個符號按鈕，依序：「 」 『 』 《 》 【 】 ： ● █，3 欄 4 列 | P0 | §5.1、§5.2、§4.3 | 目視驗證 11 個按鈕依序 3 欄 4 列呈現，逐一比對 Unicode 碼點（U+300C、U+300D、U+300E、U+300F、U+300A、U+300B、U+3010、U+3011、U+FF1A、U+25CF、U+2588）與事實清單一致 |
+| FR-004 | 點擊符號送往前景執行緒焦點控制項（GetGUIThreadInfo），依 DD-4 類別路由送出 | P0 | §7.1、§7.2 | 對應事實清單 V3（背景記事本 Edit 控制項全 11 符號依序完整到達，PASS）；其餘應用程式之路由正確性另列事實清單 V7，待老闆實機驗證 |
+| FR-005 | WM_CHAR 投遞失敗（PostMessageW 回傳 false）時後備 SendInput | P1 | §7.3 | 設定 `PUNCTINPUT_DEBUG=1` 後模擬 PostMessageW 失敗情境（例如焦點視窗於送出瞬間關閉），檢視 `%TEMP%\PunctInput_debug.log` 出現 `route=SendInput` 之後備紀錄行且 `injected` 數量正確 |
+| FR-006 | 不搶焦點：WS_EX_NOACTIVATE + WM_MOUSEACTIVATE 回 MA_NOACTIVATE + ShowWithoutActivation | P0 | §3.1、§6.3 | 目視驗證點擊符號按鈕前後，前景應用程式之視窗標題列（Active 狀態）與游標位置未被搶走，PunctInput 視窗未獲得 Activate |
+| FR-007 | 視窗置頂（TopMost + WS_EX_TOPMOST） | P1 | §4.1 | 目視驗證面板顯示期間恆置於其他一般視窗之上，切換前景應用程式後面板仍可見 |
+| FR-008 | 顯示區回饋最後點擊符號（比照小算盤顯示區，右對齊） | P1 | §4.2 | 目視驗證點擊任一符號後，上方顯示區即時更新為該符號並右對齊呈現 |
+| FR-009 | 系統匣常駐（NotifyIcon）：雙擊切換顯示；右鍵選單「顯示／隱藏（Ctrl + /）」「結束」 | P0 | §4.5 | 目視驗證系統匣圖示存在；雙擊切換顯示／隱藏正確；右鍵選單兩項功能各自正確觸發 |
+| FR-010 | 視窗關閉鈕視同隱藏（FormClosing 取消 + Hide），程序結束僅由系統匣「結束」 | P0 | §6.4 | 目視驗證點擊視窗右上角關閉鈕後視窗隱藏、工作管理員中程序仍存在；僅系統匣「結束」項可終止程序 |
+| FR-011 | 單一實例（Mutex：PunctInput_SingleInstance_Mutex），重複啟動彈出提示 | P1 | §3.1、§9 | 於已啟動狀態下重複執行 `dist\PunctInput.exe`，驗證彈出「標點符號輸入工具已在執行中，請以 Ctrl + / 呼叫。」提示且不建立第二視窗 |
+| FR-012 | Ctrl + / 註冊失敗顯示警告訊息，仍可由系統匣操作 | P2 | §9 | 模擬 Ctrl + / 已被其他程式佔用之情境下啟動本工具，驗證顯示「全域快捷鍵 Ctrl + / 註冊失敗（被其他程式佔用）。仍可由系統匣圖示操作。」警告視窗，且系統匣圖示與選單操作仍正常 |
+| FR-013 | 除錯日誌：環境變數 PUNCTINPUT_DEBUG=1 時 append 寫入 %TEMP%\PunctInput_debug.log（記錄送字路由、類別、注入結果、前景 handle）；日誌失敗不影響主功能 | P1 | §7.5 | 設定 `PUNCTINPUT_DEBUG=1` 後操作，驗證 `%TEMP%\PunctInput_debug.log` 產生對應紀錄行（含路由、類別名、前景 handle）；未設定該環境變數時不產生日誌 |
+
+## 二、 非功能需求（NFR）
+
+| 編號 | 需求 | 驗收條件 |
+|------|------|---------|
+| NFR-01 | 免安裝：單一 exe，僅依賴 Windows 內建 .NET Framework 4.x runtime | 於未安裝 .NET SDK 之 Windows 10/11 機器，僅複製 `dist\PunctInput.exe` 即可雙擊直接執行，無須額外安裝套件 |
+| NFR-02 | 建置零外部依賴：`C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe`，`scripts\build.ps1` 一鍵建置（`/codepage:65001 /target:winexe /platform:anycpu /optimize+ /win32manifest`），乾淨檢出時自動建立 `dist\` | 對應事實清單 V1（csc 編譯 0 錯誤）；執行 `powershell -ExecutionPolicy Bypass -File scripts\build.ps1` 於乾淨檢出（`dist\` 不存在）環境下成功產出 `dist\PunctInput.exe` |
+| NFR-03 | DPI 感知：manifest dpiAware=true + 執行期 Graphics.DpiX / 96 縮放版面 | `src\app.manifest` 第 6 行 `dpiAware` 為 `true`；於 125%／150% 顯示縮放環境目視驗證視窗與按鍵格依比例縮放、未變形或裁切 |
+| NFR-04 | UI 比照 Windows 10 小算盤：上方顯示區 + 下方 3x4 扁平按鍵格，背景 RGB(230,230,230)、按鍵 RGB(250,250,250)、Segoe UI 字型 | 目視比對視窗背景色、按鍵底色、字型與版面配置（上方顯示區 + 下方 3 欄 4 列按鍵格）與規格相符 |
+| NFR-05 | UI 文案繁體中文；原始碼 C# 5 語言層級相容（csc 4.0.30319 上限，禁止字串插值、?.、nameof） | UI 文案（視窗標題、按鈕、系統匣選單、訊息框）逐一抽查為繁體中文；對應事實清單 V1，`src\Program.cs` 以 csc 4.0.30319 編譯 0 錯誤，且原始碼未使用字串插值、`?.`、`nameof` 等 C# 6 以上語法 |
+
+## 三、 追蹤矩陣（PRD 目標 → FR 對應）
+
+> 下列「目標」引自 `01_PunctInput_PRD.md` 第三章「目標與成功判準」（共 5 項，逐項編號與原文一致）。
+
+| PRD 目標 | 對應需求 |
+|----------|---------|
+| 目標 1（任何前景應用程式皆可快速呼叫符號面板） | FR-001、FR-006、FR-007 |
+| 目標 2（涵蓋老闆常用之 11 個標點符號） | FR-003 |
+| 目標 3（點擊即送出，免切換輸入法） | FR-004、FR-005、FR-008 |
+| 目標 4（常駐不干擾日常操作） | FR-002、FR-009、FR-010、FR-011、FR-012 |
+| 目標 5（建置可重現、免安裝） | NFR-01、NFR-02、NFR-05 |
+| （補充：DPI 感知未於 PRD 五項目標中單列，屬範圍內需求 5.1 第 7 點） | NFR-03、NFR-04、FR-013 |
+
+---
+
+*本文件為 PunctInput 文件體系 v1.0 之 SRS 落檔（2026-07-11），依事實清單 FR-001 至 FR-013、NFR-01 至 NFR-05 逐條轉譯；FR／NFR 編號固定，後續增修不得改號。追蹤矩陣第三章之 PRD 目標引自 `01_PunctInput_PRD.md` 第三章。*
