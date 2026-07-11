@@ -27,6 +27,7 @@
 
 1. Repo：`LouisChao0728/Punctuation_Input_Tool`；推送分支 master，含 v1.0 至 v1.3 全部 commit 歷史。初始建為 private，同日老闆指示改 public（gh CLI 實查 `visibility: PUBLIC`）。
 2. README.md 補檔（同日老闆指示，repo 首頁原為空）：功能特色、符號清單、安裝與免安裝執行、操作對照、環境需求、文件地圖、已知限制與疑難排解；INDEX 檔案職責同步登記。
+3. GitHub Release v1.3（同日老闆指示）：tag `v1.3`，附 `PunctInput.exe`（17,408 bytes，assembly 1.3.0.0）為 release asset，供免建置直接下載；release notes 彙整 v1.0 至 v1.3 沿革。`dist\` 於 `.gitignore` 排除，release asset 為執行檔的正式散布管道。
 
 ---
 
