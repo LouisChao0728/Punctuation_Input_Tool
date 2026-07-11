@@ -25,7 +25,8 @@
 
 ### 發布
 
-1. Repo：`LouisChao0728/Punctuation_Input_Tool`（private）；推送分支 master，含 v1.0 至 v1.3 全部 commit 歷史。
+1. Repo：`LouisChao0728/Punctuation_Input_Tool`；推送分支 master，含 v1.0 至 v1.3 全部 commit 歷史。初始建為 private，同日老闆指示改 public（gh CLI 實查 `visibility: PUBLIC`）。
+2. README.md 補檔（同日老闆指示，repo 首頁原為空）：功能特色、符號清單、安裝與免安裝執行、操作對照、環境需求、文件地圖、已知限制與疑難排解；INDEX 檔案職責同步登記。
 
 ---
 

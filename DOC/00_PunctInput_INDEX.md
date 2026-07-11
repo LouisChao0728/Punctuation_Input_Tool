@@ -49,6 +49,7 @@
 | `dist\PunctInput.exe` | 建置產出（可執行檔） | 17,408 bytes（2026-07-11 v1.3 實查值） |
 | `DOC\` | 本專案文件目錄 | 詳見第四節 |
 | `CLAUDE.md` | 專案規則（比照 AssetM 慣例）：Rule 1 文件基準、Rule 2 異動紀錄、Rule 3 權限、Rule 4 檢核清單、Rule 5 送字路由義務、Rule 6 建置環境 | 已建立（2026-07-11） |
+| `README.md` | GitHub repo 首頁說明：功能特色、安裝與操作、環境需求、文件地圖、已知限制 | 2026-07-11 補檔（repo 公開後） |
 
 ## 四、 DOC 文件地圖
 
