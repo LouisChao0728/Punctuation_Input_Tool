@@ -47,6 +47,7 @@
 | `scripts\install.ps1` | 安裝腳本（FR-014）：偵測既有安裝先解除舊版，再部署 exe 至 `%LOCALAPPDATA%\Programs\PunctInput\`、建立開始功能表與開機自啟捷徑、啟動 | UTF-8 BOM；`-NoStartup` 略過自啟、`-NoLaunch` 不啟動；dist 缺檔時自動先建置 |
 | `scripts\uninstall.ps1` | 解除安裝腳本（FR-014）：停止程序、移除捷徑與安裝目錄 | UTF-8 BOM；不動原始碼與 `dist\` |
 | `scripts\install.bat` / `scripts\uninstall.bat` | 雙擊執行包裝：以 `%~dp0` 自我定位呼叫對應 `.ps1`，與開啟位置無關（2026-07-11 老闆實測回饋新增） | 純 ASCII；結尾 `pause` 保留輸出視窗 |
+| `scripts\Diagnose_Illustrator.bat` | 送字失效遠端取證工具（2026-07-12，Illustrator 事件）：環境探測（Illustrator 程序與提權 heuristic、IME 清單、全程序清單）→ `PUNCTINPUT_DEBUG=1` 重啟工具 → 引導重現（含記事本對照組）→ debug log 收割，全數寫入同層 `log.txt` | 純 ASCII；結尾 `pause`；exe 四序位自動定位（同層 Aphy exe → `..\dist` → 安裝版 → 同層 PunctInput.exe）；不安裝、不改系統設定 |
 | `dist\PunctInput.exe` | 建置產出（可執行檔） | 17,408 bytes（2026-07-11 v1.3 實查值） |
 | `DOC\` | 本專案文件目錄 | 詳見第四節 |
 | `CLAUDE.md` | 專案規則（比照 AssetM 慣例）：Rule 1 文件基準、Rule 2 異動紀錄、Rule 3 權限、Rule 4 檢核清單、Rule 5 送字路由義務、Rule 6 建置環境 | 已建立（2026-07-11） |
