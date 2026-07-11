@@ -4,7 +4,7 @@
 // 應用程式的焦點控制項：類別名含 EDIT 者走 WM_CHAR（PostMessageW）直遞，
 // 其餘目標走 SendInput（KEYEVENTF_UNICODE），投遞失敗後備 SendInput。
 // 工具視窗採 WS_EX_NOACTIVATE，點擊不搶焦點。
-// 快捷鍵：Ctrl + / 呼叫（顯示／隱藏切換）；Esc 關閉視窗（隱藏至系統匣）。
+// 快捷鍵：Ctrl + Alt + / 呼叫（顯示／隱藏切換）；Esc 關閉視窗（隱藏至系統匣）。
 // 建置：Windows 內建 .NET Framework csc.exe，語言層級 C# 5。
 // 規格基準：DOC\02_PunctInput_SPEC_v1.0.md（送字策略見第七章）。
 // =====================================================================
@@ -28,7 +28,7 @@ namespace PunctInput
                 if (!createdNew)
                 {
                     MessageBox.Show(
-                        "標點符號輸入工具已在執行中，請以 Ctrl + / 呼叫。",
+                        "標點符號輸入工具已在執行中，請以 Ctrl + Alt + / 呼叫。",
                         PunctPadForm.AppTitle,
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);
@@ -52,12 +52,13 @@ namespace PunctInput
         private const int WM_CHAR = 0x0102;
         private const int MA_NOACTIVATE = 3;
 
+        private const uint MOD_ALT = 0x0001;
         private const uint MOD_CONTROL = 0x0002;
         private const uint MOD_NOREPEAT = 0x4000;
         private const uint VK_OEM_2 = 0xBF;      // 「/ ?」鍵
         private const uint VK_ESCAPE = 0x1B;
 
-        private const int HOTKEY_ID_TOGGLE = 1;  // Ctrl + /：顯示／隱藏切換
+        private const int HOTKEY_ID_TOGGLE = 1;  // Ctrl + Alt + /：顯示／隱藏切換
         private const int HOTKEY_ID_ESC = 2;     // Esc：僅於視窗顯示期間註冊
 
         private const int WS_EX_TOPMOST = 0x00000008;
@@ -151,9 +152,8 @@ namespace PunctInput
         {
             ContextMenuStrip menu = new ContextMenuStrip();
 
-            // 顯示／隱藏（Ctrl + /）
             ToolStripMenuItem miToggle = new ToolStripMenuItem(
-                "顯示／隱藏（Ctrl + /）");
+                "顯示／隱藏（Ctrl + Alt + /）");
             miToggle.Click += delegate(object s, EventArgs e) { TogglePad(); };
             menu.Items.Add(miToggle);
 
@@ -166,7 +166,7 @@ namespace PunctInput
 
             _trayIcon = new NotifyIcon();
             _trayIcon.Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-            _trayIcon.Text = AppTitle + "（Ctrl + / 呼叫）";
+            _trayIcon.Text = AppTitle + "（Ctrl + Alt + / 呼叫）";
             _trayIcon.ContextMenuStrip = menu;
             _trayIcon.Visible = true;
             _trayIcon.DoubleClick += delegate(object s, EventArgs e) { TogglePad(); };
@@ -207,11 +207,11 @@ namespace PunctInput
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
-            _toggleHotkeyOk = RegisterHotKey(Handle, HOTKEY_ID_TOGGLE, MOD_CONTROL | MOD_NOREPEAT, VK_OEM_2);
+            _toggleHotkeyOk = RegisterHotKey(Handle, HOTKEY_ID_TOGGLE, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_OEM_2);
             if (!_toggleHotkeyOk)
             {
                 MessageBox.Show(
-                    "全域快捷鍵 Ctrl + / 註冊失敗（被其他程式佔用）。仍可由系統匣圖示操作。",
+                    "全域快捷鍵 Ctrl + Alt + / 註冊失敗（被其他程式佔用）。仍可由系統匣圖示操作。",
                     AppTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
