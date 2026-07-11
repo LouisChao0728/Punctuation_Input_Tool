@@ -21,21 +21,28 @@ PC 用標點符號快速輸入面板（C# WinForms）。以全域快捷鍵呼叫
 
 ### 安裝（建議）
 
+最簡單：於檔案總管直接**雙擊 `scripts\install.bat`**（自我定位，與開啟位置無關）。
+
+或以 PowerShell 執行（注意：`scripts\...` 為相對路徑，須先 `cd` 至專案根目錄，否則會回報「引數不存在」）：
+
 ```powershell
+cd Punctuation_Input_Tool
 powershell -ExecutionPolicy Bypass -File scripts\install.ps1
 ```
 
-部署至 `%LOCALAPPDATA%\Programs\PunctInput\`，建立開始功能表捷徑與開機自啟捷徑並啟動。選項：`-NoStartup` 不設開機自啟、`-NoLaunch` 安裝後不啟動。
+偵測到既有安裝會先完整解除，再部署至 `%LOCALAPPDATA%\Programs\PunctInput\`、建立開始功能表捷徑與開機自啟捷徑並啟動。選項：`-NoStartup` 不設開機自啟、`-NoLaunch` 安裝後不啟動。
 
-解除安裝：
+解除安裝：雙擊 `scripts\uninstall.bat`，或：
 
 ```powershell
+cd Punctuation_Input_Tool
 powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1
 ```
 
 ### 免安裝直接執行
 
 ```powershell
+cd Punctuation_Input_Tool
 powershell -ExecutionPolicy Bypass -File scripts\build.ps1
 .\dist\PunctInput.exe
 ```

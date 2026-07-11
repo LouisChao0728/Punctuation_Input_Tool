@@ -4,6 +4,22 @@
 
 ---
 
+## 安裝入口易用性註記（2026-07-11，與 master `0d96031` 同步）——程式本體無異動
+
+### 觸發
+
+1. 老闆實測 log（Boss_Prompt [look rs]）：於 PowerShell 預設起始目錄 `C:\Windows\system32` 執行文件所載相對路徑指令，回報「-File 引數不存在」。根因：文件指令採相對路徑但未載明須先位於專案根目錄。
+
+### 變更
+
+1. 自 master 取入 `scripts\install.bat` 與 `scripts\uninstall.bat` 雙擊執行包裝（`%~dp0` 自我定位；純 ASCII；結尾 `pause`）；README／SPEC §13／INDEX 補 `cd` 前置與雙擊入口說明（本分支在地化措辭）。
+
+### 驗證
+
+1. 包裝邏輯與 master 完全相同；master 端已自 `%TEMP%` 起始目錄實測全流程 PASS。
+
+---
+
 ## v1.4.2（2026-07-11，Aphy 分支）——列結構改版：1 列 11 項與獨立列
 
 ### 觸發
