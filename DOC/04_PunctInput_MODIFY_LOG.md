@@ -35,11 +35,14 @@
 
 1. v1.3.1；manifest assembly version 1.3.1.0。
 
-### 殘留事項
+### 發布（2026-07-12 老闆裁決，Boss_Prompt [LOOK RS] 第二輪）
 
-1. 同根共候選（`SetDataObject` 之 `EmptyClipboard` 對完全無回應擁有者阻塞）在 T2「存活但渲染慢」模擬下未發作；若 Aphy 實機更新後仍凍結，依既定候選升級方案 B（背景執行緒＋逾時）。
-2. Aphy 使用者機器之實機複測（更新後直接使用，或 `PUNCTINPUT_DEBUG=1` 重跑取證 bat）待新版交付後執行。
-3. 本機安裝版升級：2026-07-12 老闆已跑 `install.bat` 完成升級（安裝版與 dist v1.3.1 MD5 比對 MATCH、程序自安裝位置執行中，實查確認）。
+1. GitHub Release `v1.3.1`：tag 指向 master 含本登記之 HEAD，附 `PunctInput.exe`（17,408 bytes，assembly 1.3.1.0）為 asset；標記 Latest（repo「Latest」由 v1.3 移至 v1.3.1，維持「Latest＝master 現行版」慣例）；v1.3 release 保留（未獲刪除指示）。
+
+### 結案（2026-07-12）
+
+1. Aphy 使用者取得 v1.4.3 後實機複測通過（老闆回報），Illustrator 凍結事件全案結案；原殘留事項 1（複測）與 2（方案 B 升級條件）均未觸發，方案 B 退路續存於文件備查。
+2. 本機安裝版升級：2026-07-12 老闆已跑 `install.bat` 完成升級（安裝版與 dist v1.3.1 MD5 比對 MATCH、程序自安裝位置執行中，實查確認）。
 
 ---
 
