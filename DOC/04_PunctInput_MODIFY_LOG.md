@@ -37,7 +37,8 @@
 
 ### 發布（2026-07-12 老闆裁決，Boss_Prompt [LOOK RS] 第二輪）
 
-1. GitHub Release `v1.3.1`：tag 指向 master 含本登記之 HEAD，附 `PunctInput.exe`（17,408 bytes，assembly 1.3.1.0）為 asset；標記 Latest（repo「Latest」由 v1.3 移至 v1.3.1，維持「Latest＝master 現行版」慣例）；v1.3 release 保留（未獲刪除指示）。
+1. GitHub Release `v1.3.1`：tag 指向 master 含本登記之 HEAD，附 `PunctInput.exe`（17,408 bytes，assembly 1.3.1.0）為 asset；標記 Latest（repo「Latest」由 v1.3 移至 v1.3.1，維持「Latest＝master 現行版」慣例）。
+2. Release 收斂（2026-07-12 老闆裁決，後續指示）：現役僅留 `v1.3.1` 與 `v1.4.3-Aphy` 兩軌；`v1.3` 與 `v1.4.2-Aphy` 之 release 及標籤刪除（比照 2026-07-11 過時 release 刪除前例，git 分支歷史與本檔紀錄保留），遠端實查僅餘兩標籤兩 release。
 
 ### 結案（2026-07-12）
 
