@@ -39,10 +39,10 @@
 1. 老闆三項裁決：A. 交付走 GitHub Release `v1.4.3-Aphy`（tag 指向本分支含本登記之 HEAD，附 `PunctInput_Aphy.exe` 18,432 bytes 為 asset，`--latest=false` 維持 repo Latest 為 master）；B. 本機安裝版升級已由老闆自行跑 `install.bat` 完成（master 端 MD5 實查 MATCH 登記於 master MODIFY_LOG）；C. 方案 B 退路採認備存。
 2. 既有 `v1.4.2-Aphy` release 保留不動（未獲刪除指示）。
 
-### 殘留事項
+### 結案（2026-07-12，Boss_Prompt [LOOK RS] 第三輪）
 
-1. Aphy 使用者自 Release `v1.4.3-Aphy` 取得新版後實機複測（直接使用，或 `PUNCTINPUT_DEBUG=1` 重跑取證 bat 確認日誌完整鏈）。
-2. 同根共候選（`SetDataObject` 對完全無回應擁有者阻塞）於「存活但渲染慢」模擬下未發作；若實機仍凍結，升級方案 B（老闆已採認此退路）。
+1. Aphy 使用者取得 v1.4.3 後實機複測通過（老闆回報），Illustrator 凍結事件全案結案。
+2. 原殘留事項處置：實機複測（第 1 項）已完成通過；方案 B 升級條件（第 2 項）未觸發，退路續存於文件備查。
 
 ---
 
