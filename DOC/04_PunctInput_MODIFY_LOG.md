@@ -37,7 +37,7 @@
 ### 發布（2026-07-12 老闆裁決，Boss_Prompt [LOOK RS]）
 
 1. 老闆三項裁決：A. 交付走 GitHub Release `v1.4.3-Aphy`（tag 指向本分支含本登記之 HEAD，附 `PunctInput_Aphy.exe` 18,432 bytes 為 asset，`--latest=false` 維持 repo Latest 為 master）；B. 本機安裝版升級已由老闆自行跑 `install.bat` 完成（master 端 MD5 實查 MATCH 登記於 master MODIFY_LOG）；C. 方案 B 退路採認備存。
-2. 既有 `v1.4.2-Aphy` release 保留不動（未獲刪除指示）。
+2. Release 收斂（2026-07-12 老闆後續裁決）：現役僅留 `v1.3.1` 與 `v1.4.3-Aphy` 兩軌；`v1.4.2-Aphy`（與 master 之 `v1.3`）之 release 及標籤刪除（比照 2026-07-11 過時 release 刪除前例，git 分支歷史與本檔紀錄保留），遠端實查僅餘兩標籤兩 release。
 
 ### 結案（2026-07-12，Boss_Prompt [LOOK RS] 第三輪）
 
