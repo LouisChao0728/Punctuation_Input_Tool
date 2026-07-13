@@ -19,6 +19,10 @@
 
 1. 符號表與 `src\Program.cs` `SymbolRows` 陣列逐列比對一致（11＋11＋2＋11＋10＝45）；程式、版號、SPEC／SRS 均無異動。
 
+### 發布（2026-07-13 老闆裁決）
+
+1. 老闆裁決 `v1.4.3-Aphy` 標籤 force 前移至含本修正與本登記之分支 HEAD：程式本體、版號與 release asset（`PunctInput_Aphy.exe` 18,432 bytes）均不變，Source zip 隨標籤更新後含修正版 README。比照 2026-07-11 安裝入口 batch 與 2026-07-12 取證工具之標籤前移前例（登記 commit 入標籤範圍）。
+
 ---
 
 ## v1.4.3（2026-07-12，Aphy 分支，與 master v1.3.1 `14bc2eb` 同步）——剪貼簿快照限文字類白名單（Illustrator 凍結修正）
