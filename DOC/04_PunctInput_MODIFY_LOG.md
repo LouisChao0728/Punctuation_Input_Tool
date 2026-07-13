@@ -4,6 +4,23 @@
 
 ---
 
+## README 在地化修正註記（2026-07-13，Aphy 分支獨有）——程式本體無異動
+
+### 觸發
+
+1. Systex_PC_ASUS 端執行 Boss_Prompt [LOOK RS]（Release 版本 README 檢核）時發現：Aphy 分支 `README.md` 與 master 逐位元相同，符號清單載「4 欄 2 列，共 7 鍵」（Aphy 實為 5 列 45 鍵）、「免安裝直接執行」指向 `dist\PunctInput.exe`（Aphy 建置產出實為 `dist\PunctInput_Aphy.exe`，`install.ps1` 佐證）。老闆裁決修正（2026-07-13）。
+
+### 變更
+
+1. `README.md` 四處在地化：A. 前言補分支識別句（Aphy 為 45 符號擴充變體，基礎版見 master）；B. 功能特色第 1 項成對括號四組改六組（補〔〕﹝﹞）；C. 符號清單改 5 列 45 鍵表（列配置 11／11／2／11／10，與 `src\Program.cs` 之 `SymbolRows` 逐列一致）；D. 免安裝直接執行之執行檔名改 `PunctInput_Aphy.exe`。
+2. 安裝章節之部署路徑說明不動：`install.ps1` 部署後安裝名仍為 `%LOCALAPPDATA%\Programs\PunctInput\PunctInput.exe`，原文正確。
+
+### 驗證
+
+1. 符號表與 `src\Program.cs` `SymbolRows` 陣列逐列比對一致（11＋11＋2＋11＋10＝45）；程式、版號、SPEC／SRS 均無異動。
+
+---
+
 ## v1.4.3（2026-07-12，Aphy 分支，與 master v1.3.1 `14bc2eb` 同步）——剪貼簿快照限文字類白名單（Illustrator 凍結修正）
 
 ### 觸發
